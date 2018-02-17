@@ -22,6 +22,11 @@ func main() {
 }
 
 func getTime(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "only GET method are allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	w.Write([]byte(time.Now().String()))
 }
 
