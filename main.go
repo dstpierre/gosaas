@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	api := &controllers.API{}
+	api := controllers.NewAPI()
 
 	if err := http.ListenAndServe(":8080", api); err != nil {
 		log.Println(err)
