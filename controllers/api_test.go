@@ -1,12 +1,21 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/dstpierre/gosaas/data"
 )
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
+	db := &data.DB{}
+	if err := db.Open("unit", "test"); err != nil {
+		log.Fatal("erreur while creating mem data", err)
+	}
+
 	api := &API{
+		DB:     db,
 		Logger: logger,
 	}
 

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/dstpierre/gosaas/data"
 	"github.com/dstpierre/gosaas/engine"
 )
 
@@ -29,7 +30,7 @@ func (u User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if head == "detail" {
 		head, _ := engine.ShiftPath(r.URL.Path)
-		i, err := strconv.Atoi(head)
+		i, err := strconv.ParseInt(head, 10, 64)
 		if err != nil {
 			newError(err, http.StatusInternalServerError).Handler.ServeHTTP(w, r)
 			return
@@ -48,14 +49,23 @@ func (u User) profile(w http.ResponseWriter, r *http.Request) {
 
 func (u User) detail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := ctx.Value(engine.ContextUserID)
+	id := ctx.Value(engine.ContextUserID).(int64)
+	db := ctx.Value(engine.ContextDatabase).(*data.DB)
 
 	var result = new(struct {
-		ID   int       `json:"userId"`
-		Time time.Time `json:"time"`
+		ID    int64     `json:"userId"`
+		Email string    `json:"email"`
+		Time  time.Time `json:"time"`
 	})
 
-	result.ID = id.(int)
+	user, err := db.Users.GetDetail(id)
+	if err != nil {
+		engine.Respond(w, r, http.StatusInternalServerError, err)
+		return
+	}
+
+	result.ID = user.ID
+	result.Email = user.Email
 	result.Time = time.Now()
 
 	engine.Respond(w, r, http.StatusOK, result)
