@@ -1,4 +1,4 @@
-// +build !mgo
+// +build mem
 
 package mem
 
@@ -21,6 +21,7 @@ func (u *Users) SignUp(email, password string) (*model.Account, error) {
 			Email:    email,
 			ID:       userID,
 			Password: password,
+			Token:    model.NewToken(acctID),
 		}},
 	}
 
@@ -47,6 +48,7 @@ func (u *Users) RefreshSession(conn *bool, dbName string) {
 			Email:    "test@domain.com",
 			ID:       1,
 			Password: "unittest",
+			Token:    model.NewToken(1),
 		}},
 	})
 }

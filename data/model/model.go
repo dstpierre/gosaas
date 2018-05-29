@@ -11,4 +11,5 @@ type User struct {
 	ID       Key    `bson:"_id" json:"id"`
 	Email    string `bson:"email" json:"email"`
 	Password string `bson:"pw" json:"-"`
+	Token    string `bson:"tok" json:"token"`
 }

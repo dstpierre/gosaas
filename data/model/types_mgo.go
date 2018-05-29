@@ -18,3 +18,7 @@ func Open(options ...string) (*mgo.Session, error) {
 
 	return conn, nil
 }
+
+func keyToString(id Key) string {
+	return id.Hex()
+}

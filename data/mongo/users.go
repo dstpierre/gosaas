@@ -13,8 +13,15 @@ type Users struct {
 }
 
 func (u *Users) SignUp(email, password string) (*model.Account, error) {
-	acct := model.Account{ID: bson.NewObjectId(), Email: email}
-	acct.Users = append(acct.Users, model.User{ID: bson.NewObjectId(), Email: email, Password: password})
+	accountID := bson.NewObjectId()
+
+	acct := model.Account{ID: accountID, Email: email}
+	acct.Users = append(acct.Users, model.User{
+		ID:       bson.NewObjectId(),
+		Email:    email,
+		Password: password,
+		Token:    model.NewToken(accountID),
+	})
 	if err := u.DB.C("users").Insert(acct); err != nil {
 		return nil, err
 	}
