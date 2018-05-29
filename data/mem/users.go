@@ -18,10 +18,9 @@ func (u *Users) SignUp(email, password string) (*model.Account, error) {
 		ID:    acctID,
 		Email: email,
 		Users: []model.User{{
-			AccountID: acctID,
-			Email:     email,
-			ID:        userID,
-			Password:  password,
+			Email:    email,
+			ID:       userID,
+			Password: password,
 		}},
 	}
 
@@ -45,10 +44,9 @@ func (u *Users) RefreshSession(conn *bool, dbName string) {
 		ID:    1,
 		Email: "test@domain.com",
 		Users: []model.User{{
-			AccountID: 1,
-			Email:     "test@domain.com",
-			ID:        1,
-			Password:  "unittest",
+			Email:    "test@domain.com",
+			ID:       1,
+			Password: "unittest",
 		}},
 	})
 }
