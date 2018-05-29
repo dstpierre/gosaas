@@ -25,6 +25,13 @@ func Test_DB_Users_SignUp(t *testing.T) {
 	}
 }
 
+func Test_DB_Users_AddToken(t *testing.T) {
+	users := Users{}
+	users.RefreshSession(db, dbName)
+
+	//TODO
+}
+
 func Test_DB_Users_GetDetail(t *testing.T) {
 	users := Users{}
 	users.RefreshSession(db, dbName)

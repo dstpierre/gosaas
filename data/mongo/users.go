@@ -28,6 +28,27 @@ func (u *Users) SignUp(email, password string) (*model.Account, error) {
 	return &acct, nil
 }
 
+func (u *Users) AddToken(accountID, userID model.Key, name string) (*model.AccessToken, error) {
+	tok := model.AccessToken{
+		ID:    bson.NewObjectId(),
+		Name:  name,
+		Token: model.NewToken(accountID),
+	}
+
+	where := bson.M{"_id": accountID, "users._id": userID}
+	update := bson.M{"$push": bson.M{"users.$.pat": bson.M{"$push": tok}}}
+	if err := u.DB.C("users").Update(where, update); err != nil {
+		return nil, err
+	}
+	return &tok, nil
+}
+
+func (u *Users) RemoveToken(accountID, userID, tokenID model.Key) error {
+	where := bson.M{"_id": accountID, "users._id": userID}
+	update := bson.M{"$pull": bson.M{"users.$.pat": bson.M{"_id": tokenID}}}
+	return u.DB.C("users").Update(where, update)
+}
+
 func (u *Users) GetDetail(id model.Key) (*model.Account, error) {
 	var acct model.Account
 	where := bson.M{"_id": id}
