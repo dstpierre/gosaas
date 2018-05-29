@@ -1,3 +1,5 @@
+// +build mem
+
 package controllers
 
 import (

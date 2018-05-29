@@ -1,3 +1,5 @@
+// +build !mem
+
 package mongo
 
 import (
@@ -10,13 +12,22 @@ type Users struct {
 	DB *mgo.Database
 }
 
-func (u *Users) GetDetail(id model.Key) (*model.User, error) {
-	var user model.User
-	where := bson.M{"_id": id}
-	if err := u.DB.C("users").Find(where).One(&user); err != nil {
+func (u *Users) SignUp(email, password string) (*model.Account, error) {
+	acct := model.Account{ID: bson.NewObjectId(), Email: email}
+	acct.Users = append(acct.Users, model.User{ID: bson.NewObjectId(), Email: email, Password: password})
+	if err := u.DB.C("users").Insert(acct); err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return &acct, nil
+}
+
+func (u *Users) GetDetail(id model.Key) (*model.Account, error) {
+	var acct model.Account
+	where := bson.M{"_id": id}
+	if err := u.DB.C("users").Find(where).One(&acct); err != nil {
+		return nil, err
+	}
+	return &acct, nil
 }
 
 func (u *Users) RefreshSession(s *mgo.Session, dbName string) {

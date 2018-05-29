@@ -3,7 +3,7 @@
 package model
 
 type Connection = bool
-type Key = int64
+type Key = int
 
 func Open(options ...string) (bool, error) {
 	return true, nil

@@ -1,3 +1,5 @@
+// +build !mgo
+
 package mem
 
 import (
@@ -5,14 +7,33 @@ import (
 )
 
 type Users struct {
-	store []model.User
+	users []model.Account
 }
 
-func (u *Users) GetDetail(id model.Key) (*model.User, error) {
-	var user model.User
-	for _, usr := range u.store {
-		if usr.ID == id {
-			user = usr
+func (u *Users) SignUp(email, password string) (*model.Account, error) {
+	acctID := len(u.users) + 1
+	userID := acctID * 200
+
+	acct := model.Account{
+		ID:    acctID,
+		Email: email,
+		Users: []model.User{{
+			AccountID: acctID,
+			Email:     email,
+			ID:        userID,
+			Password:  password,
+		}},
+	}
+
+	u.users = append(u.users, acct)
+	return &acct, nil
+}
+
+func (u *Users) GetDetail(id model.Key) (*model.Account, error) {
+	var user model.Account
+	for _, acct := range u.users {
+		if acct.ID == id {
+			user = acct
 			break
 		}
 	}
@@ -20,5 +41,14 @@ func (u *Users) GetDetail(id model.Key) (*model.User, error) {
 }
 
 func (u *Users) RefreshSession(conn *bool, dbName string) {
-	u.store = append(u.store, model.User{ID: 1, Email: "test@domain.com"})
+	u.users = append(u.users, model.Account{
+		ID:    1,
+		Email: "test@domain.com",
+		Users: []model.User{{
+			AccountID: 1,
+			Email:     "test@domain.com",
+			ID:        1,
+			Password:  "unittest",
+		}},
+	})
 }

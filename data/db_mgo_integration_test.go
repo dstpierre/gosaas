@@ -1,4 +1,3 @@
-// +build mgo
 // +build integration
 
 package data

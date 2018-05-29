@@ -18,5 +18,6 @@ type SessionRefresher interface {
 
 type UserServices interface {
 	SessionRefresher
-	GetDetail(id model.Key) (*model.User, error)
+	SignUp(email, password string) (*model.Account, error)
+	GetDetail(id model.Key) (*model.Account, error)
 }

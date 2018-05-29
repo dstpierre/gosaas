@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dstpierre/gosaas/data"
+	"github.com/dstpierre/gosaas/data/model"
 	"github.com/dstpierre/gosaas/engine"
 )
 
@@ -49,11 +50,11 @@ func (u User) profile(w http.ResponseWriter, r *http.Request) {
 
 func (u User) detail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := ctx.Value(engine.ContextUserID).(int64)
+	id := ctx.Value(engine.ContextUserID).(model.Key)
 	db := ctx.Value(engine.ContextDatabase).(*data.DB)
 
 	var result = new(struct {
-		ID    int64     `json:"userId"`
+		ID    model.Key `json:"userId"`
 		Email string    `json:"email"`
 		Time  time.Time `json:"time"`
 	})

@@ -1,5 +1,5 @@
 // +build integration
-// +build mgo
+// +build !mem
 
 package mongo
 
@@ -10,6 +10,7 @@ import (
 
 	"github.com/dstpierre/gosaas/data/model"
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -28,5 +29,11 @@ func TestMain(m *testing.M) {
 
 	db = conn
 	defer conn.Close()
+
+	// clean up
+	if _, err = db.DB(dbName).C("users").RemoveAll(bson.M{"email": "unit@test.com"}); err != nil {
+		log.Fatal("unable to remove integration test data: ", err)
+	}
+
 	os.Exit(m.Run())
 }

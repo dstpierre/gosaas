@@ -1,3 +1,5 @@
+// +build !mgo
+
 package controllers
 
 import (
@@ -11,7 +13,7 @@ import (
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	db := &data.DB{}
 	if err := db.Open("unit", "test"); err != nil {
-		log.Fatal("erreur while creating mem data", err)
+		log.Fatal("error while creating mem data ", err)
 	}
 
 	api := &API{

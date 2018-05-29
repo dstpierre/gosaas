@@ -1,4 +1,4 @@
-// +build mgo
+// +build !mem
 
 package model
 
