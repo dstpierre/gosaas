@@ -4,6 +4,7 @@ package mem
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/dstpierre/gosaas/data/model"
 )
@@ -64,6 +65,41 @@ func (u *Users) RemoveToken(accountID, userID, tokenID model.Key) error {
 		}
 	}
 	return nil
+}
+
+func (u *Users) Auth(accountID, token string, pat bool) (*model.Account, *model.User, error) {
+	id, err := strconv.Atoi(accountID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	acct, err := u.GetDetail(id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var user model.User
+	for _, usr := range acct.Users {
+		if pat {
+			for _, at := range usr.AccessTokens {
+				if at.Token == token {
+					user = usr
+					break
+				}
+			}
+		} else {
+			if usr.Token == token {
+				user = usr
+				break
+			}
+		}
+	}
+
+	if len(user.Email) == 0 {
+		return nil, nil, fmt.Errorf("unable to find this token %s", token)
+	}
+
+	return acct, &user, nil
 }
 
 func (u *Users) GetDetail(id model.Key) (*model.Account, error) {

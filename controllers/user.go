@@ -1,10 +1,8 @@
 package controllers
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/dstpierre/gosaas/data"
@@ -30,15 +28,7 @@ func (u User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		u.profile(w, r)
 		return
 	} else if head == "detail" {
-		head, _ := engine.ShiftPath(r.URL.Path)
-		i, err := strconv.ParseInt(head, 10, 64)
-		if err != nil {
-			newError(err, http.StatusInternalServerError).Handler.ServeHTTP(w, r)
-			return
-		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, engine.ContextUserID, i)
-		u.detail(w, r.WithContext(ctx))
+		u.detail(w, r)
 		return
 	}
 	newError(fmt.Errorf("path not found"), http.StatusNotFound).Handler.ServeHTTP(w, r)
@@ -50,7 +40,7 @@ func (u User) profile(w http.ResponseWriter, r *http.Request) {
 
 func (u User) detail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id := ctx.Value(engine.ContextUserID).(model.Key)
+	keys := ctx.Value(engine.ContextAuth).(engine.Auth)
 	db := ctx.Value(engine.ContextDatabase).(*data.DB)
 
 	var result = new(struct {
@@ -59,7 +49,7 @@ func (u User) detail(w http.ResponseWriter, r *http.Request) {
 		Time  time.Time `json:"time"`
 	})
 
-	user, err := db.Users.GetDetail(id)
+	user, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 		return

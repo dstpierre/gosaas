@@ -29,7 +29,28 @@ func Test_DB_Users_AddToken(t *testing.T) {
 	users := Users{}
 	users.RefreshSession(db, dbName)
 
-	//TODO
+	tok, err := users.AddToken(testAccount.ID, testAccount.Users[0].ID, "unit test")
+	if err != nil {
+		t.Error("error while creating access token", err)
+	} else if tok == nil {
+		t.Error("returned nil for the token")
+	} else if tok.Name != "unit test" {
+		t.Error("expected name to be `unit test` got", tok.Name)
+	}
+}
+
+func Test_DB_Users_Auth(t *testing.T) {
+	users := Users{}
+	users.RefreshSession(db, dbName)
+
+	a, u, err := users.Auth(testAccount.ID.Hex(), testAccount.Users[0].Token, false)
+	if err != nil {
+		t.Error("error during authentication", err)
+	} else if u.ID != testAccount.Users[0].ID {
+		t.Errorf("expected user to be %s got %s", testAccount.Users[0].Email, u.Email)
+	} else if a.ID != testAccount.ID {
+		t.Errorf("expected account to be %v got %v", testAccount.ID, a.ID)
+	}
 }
 
 func Test_DB_Users_GetDetail(t *testing.T) {
