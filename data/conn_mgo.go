@@ -21,5 +21,8 @@ func (db *DB) Open(driverName, dataSourceName string) error {
 	db.Users = &mongo.Users{}
 
 	db.Connection = conn
+
+	db.DatabaseName = "gosaas"
+	db.CopySession = true
 	return nil
 }

@@ -9,6 +9,8 @@ const (
 	ContextRequestStart
 	// ContextDatabase holds a reference to a data.DB database connection and services
 	ContextDatabase
-	// ContextUserID holds the authenticated user account id and user id
+	// ContextAuth holds the authenticated user account id and user id
 	ContextAuth
+	// ContextMinimumRole holds the minimum role to access this resource
+	ContextMinimumRole
 )

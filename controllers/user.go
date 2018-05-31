@@ -16,8 +16,9 @@ type User struct{}
 func newUser() *engine.Route {
 	var u interface{} = User{}
 	return &engine.Route{
-		Logger:  true,
-		Handler: u.(http.Handler),
+		Logger:      true,
+		MinimumRole: model.RoleAdmin,
+		Handler:     u.(http.Handler),
 	}
 }
 

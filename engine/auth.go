@@ -19,11 +19,13 @@ type Auth struct {
 	AccountID model.Key
 	UserID    model.Key
 	Email     string
+	Role      model.Roles
 }
 
 func Authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		mr := ctx.Value(ContextMinimumRole).(model.Roles)
 
 		key, pat, err := extractKeyFromRequest(r)
 		if err != nil {
@@ -42,10 +44,11 @@ func Authenticator(next http.Handler) http.Handler {
 		if len(a.Email) > 0 {
 			ctx = context.WithValue(ctx, ContextAuth, a)
 		} else {
+			fmt.Println("database call for auth", key)
 			db := ctx.Value(ContextDatabase).(*data.DB)
 
-			id, tok := model.ParseToken(key)
-			acct, user, err := db.Users.Auth(id, tok, pat)
+			id, _ := model.ParseToken(key)
+			acct, user, err := db.Users.Auth(id, key, pat)
 			if err != nil {
 				http.Error(w, "invalid token key", http.StatusUnauthorized)
 				return
@@ -60,6 +63,13 @@ func Authenticator(next http.Handler) http.Handler {
 
 			ctx = context.WithValue(ctx, ContextAuth, a)
 		}
+
+		// we authorize the request
+		if mr < a.Role {
+			http.Error(w, "not authorized", http.StatusUnauthorized)
+			return
+		}
+
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

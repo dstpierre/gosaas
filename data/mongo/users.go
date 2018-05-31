@@ -23,6 +23,7 @@ func (u *Users) SignUp(email, password string) (*model.Account, error) {
 		Email:    email,
 		Password: password,
 		Token:    model.NewToken(accountID),
+		Role:     model.RoleAdmin,
 	})
 	if err := u.DB.C("users").Insert(acct); err != nil {
 		return nil, err
@@ -58,8 +59,11 @@ func (u *Users) Auth(accountID, token string, pat bool) (*model.Account, *model.
 
 	id := bson.ObjectIdHex(accountID)
 
+	fmt.Println("looking account", id)
+
 	acct, err := u.GetDetail(id)
 	if err != nil {
+		fmt.Println("cannot find acct", err)
 		return nil, nil, err
 	}
 
@@ -73,6 +77,7 @@ func (u *Users) Auth(accountID, token string, pat bool) (*model.Account, *model.
 				}
 			}
 		} else {
+			fmt.Println("comparing", token, "with", usr.Token)
 			if usr.Token == token {
 				user = usr
 				break

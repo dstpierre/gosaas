@@ -17,8 +17,9 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	}
 
 	api := &API{
-		DB:     db,
-		Logger: logger,
+		DB:            db,
+		Logger:        logger,
+		Authenticator: authenticator,
 	}
 
 	rec := httptest.NewRecorder()
@@ -28,6 +29,12 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 }
 
 func logger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+	})
+}
+
+func authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)
 	})

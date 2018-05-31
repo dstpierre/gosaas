@@ -25,6 +25,7 @@ func (u *Users) SignUp(email, password string) (*model.Account, error) {
 			ID:       userID,
 			Password: password,
 			Token:    model.NewToken(acctID),
+			Role:     model.RoleAdmin,
 		}},
 	}
 
@@ -122,6 +123,7 @@ func (u *Users) RefreshSession(conn *bool, dbName string) {
 			ID:       1,
 			Password: "unittest",
 			Token:    model.NewToken(1),
+			Role:     model.RoleAdmin,
 		}},
 	})
 }
