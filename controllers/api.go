@@ -16,6 +16,7 @@ type API struct {
 	DB            *data.DB
 	Logger        func(http.Handler) http.Handler
 	Authenticator func(http.Handler) http.Handler
+	Throttler     func(http.Handler) http.Handler
 	User          *engine.Route
 }
 
@@ -24,6 +25,7 @@ func NewAPI() *API {
 	return &API{
 		Logger:        engine.Logger,
 		Authenticator: engine.Authenticator,
+		Throttler:     engine.Throttler,
 	}
 }
 
@@ -55,6 +57,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if next.Logger {
 		next.Handler = a.Logger(next.Handler)
 	}
+
+	next.Handler = a.Throttler(next.Handler)
 
 	next.Handler.ServeHTTP(w, r.WithContext(ctx))
 }
