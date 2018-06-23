@@ -8,7 +8,16 @@ import (
 // Throttle increments the requests count for a specific key and set expiration if it's a new period.
 func Throttle(key string, expire time.Duration) (int64, error) {
 	key = fmt.Sprintf("%s_t", key)
+	return increaseThrottle(key, expire)
+}
 
+// RateLimit increments the requests count for a specific key and set expiration if it's a new period.
+func RateLimit(key string, expire time.Duration) (int64, error) {
+	key = fmt.Sprintf("%s_rl", key)
+	return increaseThrottle(key, expire)
+}
+
+func increaseThrottle(key string, expire time.Duration) (int64, error) {
 	i, err := rc.Incr(key).Result()
 	if err != nil {
 		return 0, err
@@ -31,9 +40,16 @@ func Throttle(key string, expire time.Duration) (int64, error) {
 	return i, nil
 }
 
-// GetThrottleExpiration returns the duration before a key expire
+// GetThrottleExpiration returns the duration before a key expire for throttling
 func GetThrottleExpiration(key string) (time.Duration, error) {
 	key = fmt.Sprintf("%s_t", key)
+
+	return rc.TTL(key).Result()
+}
+
+// GetRateLimitExpiration returns the duration before a key expire for rate limit.
+func GetRateLimitExpiration(key string) (time.Duration, error) {
+	key = fmt.Sprintf("%s_rl", key)
 
 	return rc.TTL(key).Result()
 }

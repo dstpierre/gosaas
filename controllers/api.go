@@ -17,6 +17,7 @@ type API struct {
 	Logger        func(http.Handler) http.Handler
 	Authenticator func(http.Handler) http.Handler
 	Throttler     func(http.Handler) http.Handler
+	RateLimiter   func(http.Handler) http.Handler
 	User          *engine.Route
 }
 
@@ -26,6 +27,7 @@ func NewAPI() *API {
 		Logger:        engine.Logger,
 		Authenticator: engine.Authenticator,
 		Throttler:     engine.Throttler,
+		RateLimiter:   engine.RateLimiter,
 	}
 }
 
@@ -58,6 +60,7 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		next.Handler = a.Logger(next.Handler)
 	}
 
+	next.Handler = a.RateLimiter(next.Handler)
 	next.Handler = a.Throttler(next.Handler)
 
 	next.Handler.ServeHTTP(w, r.WithContext(ctx))
