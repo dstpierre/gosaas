@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/dstpierre/gosaas/cache"
+	"github.com/dstpierre/gosaas/data/model"
 )
 
 // Logger middleware that log request information
@@ -31,4 +34,24 @@ func logRequest(r *http.Request, statusCode int) {
 	if s, ok := v.(time.Time); ok {
 		log.Println(time.Since(s), statusCode, r.Method, path)
 	}
+
+	keys, ok := ctx.Value(ContextAuth).(Auth)
+	if !ok {
+		return
+	}
+
+	lr := model.APIRequest{
+		AccountID:  keys.AccountID,
+		Requested:  time.Now(),
+		StatusCode: statusCode,
+		URL:        path,
+		UserID:     keys.UserID,
+	}
+
+	go func(lr model.APIRequest) {
+		if err := cache.LogRequest(lr); err != nil {
+			// TODO: this should be reported somewhere else as well
+			log.Println("error while logging request to Redis", err)
+		}
+	}(lr)
 }

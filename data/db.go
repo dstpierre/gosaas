@@ -24,3 +24,8 @@ type UserServices interface {
 	Auth(accountID, token string, pat bool) (*model.Account, *model.User, error)
 	GetDetail(id model.Key) (*model.Account, error)
 }
+
+type AdminServices interface {
+	SessionRefresher
+	LogRequests(reqs []model.APIRequest) error
+}
