@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/dstpierre/gosaas/cache"
 	"github.com/dstpierre/gosaas/controllers"
 	"github.com/dstpierre/gosaas/data"
 )
@@ -12,6 +13,7 @@ import (
 func main() {
 	dn := flag.String("driver", "postgres", "name of the database driver to use, postgres or mongo are supported")
 	ds := flag.String("datasource", "", "database connection string")
+	q := flag.Bool("queue", false, "set as queue pub/sub subscriber and task executor")
 	flag.Parse()
 
 	if len(*dn) == 0 || len(*ds) == 0 {
@@ -29,6 +31,9 @@ func main() {
 	}
 
 	api.DB = db
+
+	// Set as Redis pub/sub subscriber for the queue executor if q is true
+	cache.New(*q)
 
 	if err := http.ListenAndServe(":8080", api); err != nil {
 		log.Println(err)

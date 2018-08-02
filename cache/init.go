@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/dstpierre/gosaas/queue"
 	"github.com/go-redis/redis"
 )
 
@@ -26,4 +27,12 @@ func init() {
 	}
 
 	rc = c
+}
+
+func New(queueProcessor bool) {
+	queue.New(rc)
+
+	if queueProcessor {
+		queue.SetAsSubscriber()
+	}
 }
