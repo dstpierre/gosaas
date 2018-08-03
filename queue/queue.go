@@ -2,7 +2,6 @@ package queue
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -12,10 +11,20 @@ import (
 var (
 	client *redis.Client
 	pubsub *redis.PubSub
+	isDev  bool
+
+	emailer *Email
 )
 
-func New(rc *redis.Client) {
+func New(rc *redis.Client, isDev bool) {
 	client = rc
+
+	emailer = &Email{}
+	if isDev {
+		emailer.Send = emailer.sendEmailDev
+	} else {
+		emailer.Send = emailer.sendEmailProd
+	}
 }
 
 func SetAsSubscriber() {
@@ -38,7 +47,7 @@ func SetAsSubscriber() {
 			break
 		}
 
-		process(msg)
+		go process(msg)
 	}
 }
 
@@ -57,5 +66,20 @@ func Enqueue(id TaskID, data interface{}) error {
 }
 
 func process(msg *redis.Message) {
-	fmt.Println(msg.Channel, msg.Payload)
+	var qt QueueTask
+	if err := json.Unmarshal([]byte(msg.Payload), &qt); err != nil {
+		log.Fatal("unable to decode this Redis message", err)
+	}
+
+	var exec TaskExecutor
+
+	switch qt.ID {
+	case TaskEmail:
+		exec = emailer
+	}
+
+	if err := exec.Run(qt); err != nil {
+		//TODO: better to log those critical errors
+		log.Println("error while executing this task", qt.ID, err)
+	}
 }

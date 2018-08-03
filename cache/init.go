@@ -29,8 +29,8 @@ func init() {
 	rc = c
 }
 
-func New(queueProcessor bool) {
-	queue.New(rc)
+func New(queueProcessor, isDev bool) {
+	queue.New(rc, isDev)
 
 	if queueProcessor {
 		queue.SetAsSubscriber()

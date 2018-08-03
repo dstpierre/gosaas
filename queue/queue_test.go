@@ -8,13 +8,6 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type TaskExample struct {
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Subject string `json:"subject"`
-	Body    string `json:"body"`
-}
-
 func TestQueue_Setup_Queue(t *testing.T) {
 	fmt.Println("opening redis connection...")
 
@@ -29,13 +22,13 @@ func TestQueue_Setup_Queue(t *testing.T) {
 		t.Fatal("unable to connect to redis", err)
 	}
 
-	New(c)
+	New(c, true)
 	go SetAsSubscriber()
 
 	time.AfterFunc(time.Second, func() {
 		fmt.Println("enqueing something")
 
-		err := Enqueue(TaskEmail, TaskExample{
+		err := Enqueue(TaskEmail, SendEmailParameter{
 			From:    "me@testing.com",
 			To:      "unit@test.com",
 			Subject: "unit test",

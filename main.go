@@ -14,6 +14,7 @@ func main() {
 	dn := flag.String("driver", "postgres", "name of the database driver to use, postgres or mongo are supported")
 	ds := flag.String("datasource", "", "database connection string")
 	q := flag.Bool("queue", false, "set as queue pub/sub subscriber and task executor")
+	e := flag.String("env", "dev", "set the current environment [dev|staging|prod]")
 	flag.Parse()
 
 	if len(*dn) == 0 || len(*ds) == 0 {
@@ -32,8 +33,13 @@ func main() {
 
 	api.DB = db
 
+	isDev := false
+	if *e == "dev" {
+		isDev = true
+	}
+
 	// Set as Redis pub/sub subscriber for the queue executor if q is true
-	cache.New(*q)
+	cache.New(*q, isDev)
 
 	if err := http.ListenAndServe(":8080", api); err != nil {
 		log.Println(err)
