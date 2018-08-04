@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/robfig/cron"
 )
 
 func TestQueue_Setup_Queue(t *testing.T) {
@@ -41,4 +42,28 @@ func TestQueue_Setup_Queue(t *testing.T) {
 	})
 
 	time.Sleep(3 * time.Second)
+}
+
+func TestQueue_ParseTask(t *testing.T) {
+	cexp := "0 0 */15 0 0 0 https://google.com"
+	exp, url := parseTask(cexp)
+	if url != "https://google.com" {
+		t.Errorf("url is %s was expecting https://google.com", url)
+	} else if exp != "0 0 */15 0 0 0" {
+		t.Errorf("exp is %s was expecting 0 0 */15 0 0 0", exp)
+	}
+}
+
+func TestQueue_SetupCron(t *testing.T) {
+	scheduler = cron.New()
+	defer scheduler.Stop()
+
+	setupCron()
+
+	ch := make(chan bool)
+	time.AfterFunc(17*time.Second, func() {
+		ch <- true
+	})
+
+	<-ch
 }

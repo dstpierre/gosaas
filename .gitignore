@@ -1,5 +1,7 @@
 gosaas-dev
 
+queue/tasks.cron
+
 # Binaries for programs and plugins
 *.exe
 *.dll
