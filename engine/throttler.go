@@ -11,8 +11,18 @@ import (
 // Throttler middleware used to throttle and apply rate limit to requests.
 func Throttler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var keys Auth
+
 		ctx := r.Context()
-		keys := ctx.Value(ContextAuth).(Auth)
+		v := ctx.Value(ContextAuth)
+		if v == nil {
+			keys = Auth{}
+		} else {
+			a, ok := v.(Auth)
+			if ok {
+				keys = a
+			}
+		}
 
 		key := fmt.Sprintf("%v", keys.AccountID)
 

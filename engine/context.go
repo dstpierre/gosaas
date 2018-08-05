@@ -13,4 +13,8 @@ const (
 	ContextAuth
 	// ContextMinimumRole holds the minimum role to access this resource
 	ContextMinimumRole
+	// ContextRequestID unique ID for each request
+	ContextRequestID
+	// ContextRequestDump holds the request data
+	ContextRequestDump
 )

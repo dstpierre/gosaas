@@ -25,6 +25,12 @@ func Respond(w http.ResponseWriter, r *http.Request, status int, data interface{
 		return err
 	}
 
+	// write the request ID
+	reqID, ok := r.Context().Value(ContextRequestID).(string)
+	if ok {
+		w.Header().Set("X-Request-ID", reqID)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(js)

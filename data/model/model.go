@@ -41,4 +41,5 @@ type APIRequest struct {
 	URL        string    `bson:"url" json:"url"`
 	Requested  time.Time `bson:"reqon" json:"requested"`
 	StatusCode int       `bson:"sc" json:"statusCode"`
+	RequestID  string    `bson:"reqid" json:"reqId"`
 }
