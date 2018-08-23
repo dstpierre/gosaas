@@ -14,6 +14,7 @@ func (db *DB) Open(driverName, dataSourceName string) error {
 	}
 
 	db.Users = &mem.Users{}
+	db.Webhooks = &mem.Webhooks{}
 
 	// we use this to populate test data for unit test
 	db.CopySession = true

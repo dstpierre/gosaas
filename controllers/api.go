@@ -38,6 +38,13 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if a.DB.CopySession {
 		fmt.Println("copy mongo session")
 		a.DB.Users.RefreshSession(a.DB.Connection, a.DB.DatabaseName)
+		a.DB.Webhooks.RefreshSession(a.DB.Connection, a.DB.DatabaseName)
+
+		defer func() {
+			fmt.Println("closing mongo session")
+			a.DB.Users.Close()
+			a.DB.Webhooks.Close()
+		}()
 	}
 
 	ctx = context.WithValue(ctx, engine.ContextDatabase, a.DB)

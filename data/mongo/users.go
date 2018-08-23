@@ -104,3 +104,7 @@ func (u *Users) GetDetail(id model.Key) (*model.Account, error) {
 func (u *Users) RefreshSession(s *mgo.Session, dbName string) {
 	u.DB = s.Copy().DB(dbName)
 }
+
+func (u *Users) Close() {
+	u.DB.Session.Close()
+}

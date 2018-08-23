@@ -9,15 +9,21 @@ type DB struct {
 	Connection   *model.Connection
 	CopySession  bool
 
-	Users UserServices
+	Users    UserServices
+	Webhooks WebhookServices
 }
 
 type SessionRefresher interface {
 	RefreshSession(*model.Connection, string)
 }
 
+type SessionCloser interface {
+	Close()
+}
+
 type UserServices interface {
 	SessionRefresher
+	SessionCloser
 	SignUp(email, password string) (*model.Account, error)
 	AddToken(accountID, userID model.Key, name string) (*model.AccessToken, error)
 	RemoveToken(accountID, userID, tokenID model.Key) error
@@ -27,5 +33,15 @@ type UserServices interface {
 
 type AdminServices interface {
 	SessionRefresher
+	SessionCloser
 	LogRequests(reqs []model.APIRequest) error
+}
+
+type WebhookServices interface {
+	SessionRefresher
+	SessionCloser
+	Add(accountID model.Key, events, url string) error
+	List(accountID model.Key) ([]model.Webhook, error)
+	Delete(accountID model.Key, event, url string) error
+	AllSubscriptions(event string) ([]model.Webhook, error)
 }

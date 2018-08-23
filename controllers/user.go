@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/dstpierre/gosaas/data"
 	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/data/mongo"
 	"github.com/dstpierre/gosaas/engine"
 )
 
@@ -55,6 +57,17 @@ func (u User) detail(w http.ResponseWriter, r *http.Request) {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
+
+	var wh data.WebhookServices
+	switch v := db.Webhooks.(type) {
+	case *mongo.Webhooks:
+		wh = &mongo.Webhooks{}
+	default:
+		log.Println("unhandled data type")
+		wh = v
+	}
+	wh.RefreshSession(db.Connection, db.DatabaseName)
+	go sendWebhook(wh, engine.WebhookEventUserDetail, user)
 
 	result.ID = user.ID
 	result.Email = user.Email

@@ -127,3 +127,6 @@ func (u *Users) RefreshSession(conn *bool, dbName string) {
 		}},
 	})
 }
+
+func (u *Users) Close() {
+}

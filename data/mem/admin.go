@@ -12,7 +12,11 @@ type Admin struct {
 
 func (a *Admin) LogRequest(reqs []model.APIRequest) error {
 	a.requests = append(a.requests, reqs...)
+	return nil
 }
 
 func (a *Admin) RefreshSession(conn *bool, dbName string) {
+}
+
+func (a *Admin) Close() {
 }

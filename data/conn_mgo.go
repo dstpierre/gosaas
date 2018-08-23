@@ -19,6 +19,7 @@ func (db *DB) Open(driverName, dataSourceName string) error {
 	//  for mongo, we need to copy the connection session at each requests
 	// this is done in our api's ServeHTTP
 	db.Users = &mongo.Users{}
+	db.Webhooks = &mongo.Webhooks{}
 
 	db.Connection = conn
 

@@ -43,3 +43,12 @@ type APIRequest struct {
 	StatusCode int       `bson:"sc" json:"statusCode"`
 	RequestID  string    `bson:"reqid" json:"reqId"`
 }
+
+type Webhook struct {
+	ID        Key       `bson:"_id" json:"id"`
+	AccountID Key       `bson:"accountId" json:"accountId"`
+	EventName string    `bson:"event" json:"event"`
+	TargetURL string    `bson:"url" json:"url"`
+	IsActive  bool      `bson:"active" json:"active"`
+	Created   time.Time `bson:"created" json:"created"`
+}
