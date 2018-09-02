@@ -21,12 +21,14 @@ var (
 	isDev     bool
 
 	emailer *Email
+	biller  *Billing
 )
 
 func New(rc *redis.Client, isDev bool) {
 	client = rc
 
 	emailer = &Email{}
+	biller = &Billing{}
 	if isDev {
 		emailer.Send = emailer.sendEmailDev
 	} else {
@@ -148,6 +150,8 @@ func process(msg *redis.Message) {
 	switch qt.ID {
 	case TaskEmail:
 		exec = emailer
+	case TaskCreateInvoice:
+		exec = biller
 	}
 
 	if err := exec.Run(qt); err != nil {

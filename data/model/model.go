@@ -5,10 +5,29 @@ import (
 )
 
 type Account struct {
-	ID    Key    `bson:"_id" json:"id"`
-	Email string `bson:"email" json:"email"`
+	ID             Key       `bson:"_id" json:"id"`
+	Email          string    `bson:"email" json:"email"`
+	StripeID       string    `bson:"stripeId" json:"stripeId"`
+	SubscriptionID string    `bson:"subId" json:"subscriptionId"`
+	Plan           string    `bson:"plan" json:"plan"`
+	IsYearly       bool      `bson:"isYearly" json:"isYearly"`
+	SubscribedOn   time.Time `bson:"subscribed" json:"subscribed"`
+	Seats          int       `bson:"seats" json:"seats"`
+	TrialInfo      Trial     `bson:"trial" json:"trial"`
 
 	Users []User `bson:"users" json:"users"`
+}
+
+// IsPaid returns if this account is a paying customer
+func (a *Account) IsPaid() bool {
+	return len(a.StripeID) > 0 && len(a.SubscriptionID) > 0
+}
+
+type Trial struct {
+	IsTrial  bool      `bson:"trial" json:"trial"`
+	Plan     string    `bson:"plan" json:"plan"`
+	Start    time.Time `bson:"start" json:"start"`
+	Extended int       `bson:"extended" json:"extended"`
 }
 
 type Roles int
@@ -16,6 +35,7 @@ type Roles int
 const (
 	RoleAdmin Roles = iota
 	RoleUser
+	RoleFree
 )
 
 type User struct {

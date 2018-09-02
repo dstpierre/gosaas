@@ -29,6 +29,11 @@ type UserServices interface {
 	RemoveToken(accountID, userID, tokenID model.Key) error
 	Auth(accountID, token string, pat bool) (*model.Account, *model.User, error)
 	GetDetail(id model.Key) (*model.Account, error)
+	GetByStripe(stripeId string) (*model.Account, error)
+	SetSeats(id model.Key, seats int) error
+	ConvertToPaid(id model.Key, stripeID, subID, plan string, yearly bool, seats int) error
+	ChangePlan(id model.Key, plan string, yearly bool) error
+	Cancel(id model.Key) error
 }
 
 type AdminServices interface {

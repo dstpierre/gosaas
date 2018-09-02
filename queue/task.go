@@ -11,6 +11,7 @@ type TaskID int
 
 const (
 	TaskEmail TaskID = iota
+	TaskCreateInvoice
 )
 
 type QueueTask struct {

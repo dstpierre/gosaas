@@ -5,6 +5,7 @@ package mem
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/dstpierre/gosaas/data/model"
 )
@@ -112,6 +113,66 @@ func (u *Users) GetDetail(id model.Key) (*model.Account, error) {
 		}
 	}
 	return &user, nil
+}
+
+func (u *Users) GetByStripe(stripeID string) (*model.Account, error) {
+	var user model.Account
+	for _, acct := range u.users {
+		if acct.StripeID == stripeID {
+			user = acct
+			break
+		}
+	}
+	return &user, nil
+}
+
+func (u *Users) SetSeats(id model.Key, seats int) error {
+	for i := 0; i < len(u.users); i++ {
+		if u.users[i].ID == id {
+			u.users[i].Seats = seats
+			break
+		}
+	}
+	return nil
+}
+
+func (u *Users) ConvertToPaid(id model.Key, stripeID, subID, plan string, yearly bool, seats int) error {
+	for i := 0; i < len(u.users); i++ {
+		if u.users[i].ID == id {
+			u.users[i].StripeID = stripeID
+			u.users[i].SubscriptionID = subID
+			u.users[i].Plan = plan
+			u.users[i].IsYearly = IsYearly
+			u.users[i].Seats = seats
+			u.users[i].SubscribedOn = time.Now()
+			break
+		}
+	}
+	return nil
+}
+
+func (u *Users) ChangePlan(id model.Key, plan string, yearly bool) error {
+	for i := 0; i < len(u.users); i++ {
+		if u.users[i].ID == id {
+			u.users[i].Plan = plan
+			u.users[i].IsYearly = IsYearly
+			break
+		}
+	}
+	return nil
+}
+
+func (u *Users) Cancel(id model.Key) error {
+	for i := 0; i < len(u.users); i++ {
+		if u.users[i].ID == id {
+			u.users[i].SubscriptionID = ""
+			u.users[i].Plan = ""
+			u.users[i].IsYearly = false
+			u.users[i].Seats = 0
+			break
+		}
+	}
+	return nil
 }
 
 func (u *Users) RefreshSession(conn *bool, dbName string) {
