@@ -26,7 +26,7 @@ func (b *Billing) Run(qt QueueTask) error {
 	// since we're on a go routine we can use a time.Sleep
 	time.Sleep(2 * time.Hour)
 
-	p := &stripe.InvoiceParams{Customer: id}
+	p := &stripe.InvoiceParams{Customer: &id}
 	_, err := invoice.New(p)
 	return err
 }

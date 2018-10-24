@@ -141,17 +141,17 @@ func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 		ov.CurrentPlan = &p
 	}
 
-	cards := card.List(&stripe.CardListParams{Customer: account.StripeID})
+	cards := card.List(&stripe.CardListParams{Customer: &account.StripeID})
 	for cards.Next() {
 		c := cards.Card()
 		if !c.Deleted {
 			ov.Cards = append(ov.Cards, BillingCardData{
 				ID:         c.ID,
 				Name:       c.Name,
-				Number:     c.LastFour,
-				Month:      fmt.Sprintf("%d", c.Month),
-				Year:       fmt.Sprintf("%d", c.Year),
-				Expiration: fmt.Sprintf("%d / %d", c.Month, c.Year),
+				Number:     c.Last4,
+				Month:      fmt.Sprintf("%d", c.ExpMonth),
+				Year:       fmt.Sprintf("%d", c.ExpYear),
+				Expiration: fmt.Sprintf("%d / %d", c.ExpMonth, c.ExpYear),
 				Brand:      string(c.Brand),
 			})
 		}
@@ -161,7 +161,8 @@ func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b Billing) changeQuantity(stripeID, subID string, qty int) error {
-	p := &stripe.SubParams{Customer: stripeID, Quantity: uint64(qty)}
+	q := int64(qty)
+	p := &stripe.SubscriptionParams{Customer: &stripeID, Quantity: &q}
 	_, err := sub.Update(subID, p)
 	return err
 }
@@ -234,15 +235,15 @@ func (b Billing) start(w http.ResponseWriter, r *http.Request) {
 		engine.Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
-
-	p := &stripe.CustomerParams{Email: keys.Email}
+	
+	p := &stripe.CustomerParams{Email: &keys.Email}
 	p.SetSource(&stripe.CardParams{
-		Name:   data.Card.Name,
-		Number: data.Card.Number,
-		Month:  data.Card.Month,
-		Year:   data.Card.Year,
-		CVC:    data.Card.CVC,
-		Zip:    data.Zip,
+		Name:   &data.Card.Name,
+		Number: &data.Card.Number,
+		ExpMonth:  &data.Card.Month,
+		ExpYear:   &data.Card.Year,
+		CVC:    &data.Card.CVC,
+		AddressZip:    &data.Zip,
 	})
 
 	c, err := customer.New(p)
@@ -270,14 +271,15 @@ func (b Billing) start(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Coupon:   "PRELAUNCH11",
-	subp := &stripe.SubParams{
-		Customer: c.ID,
-		Plan:     plan,
-		Quantity: uint64(seats),
+	seatsptr := int64(seats)
+	subp := &stripe.SubscriptionParams{
+		Customer: &c.ID,
+		Plan:     &plan,
+		Quantity: &seatsptr,
 	}
 
 	if len(data.Coupon) > 0 {
-		subp.Coupon = data.Coupon
+		subp.Coupon = &data.Coupon
 	}
 
 	s, err := sub.New(subp)
@@ -375,9 +377,13 @@ func (b Billing) changePlan(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		subParams := &stripe.SubParams{Customer: account.StripeID,
-			Plan:     plan,
-			Quantity: uint64(seats)}
+		seatsptr := int64(seats)
+		subParams := &stripe.SubscriptionParams{
+			Customer: &account.StripeID,
+			Plan:     &plan,
+			Quantity: &seatsptr,
+		}
+		
 		// if we upgrade we need to change billing cycle date
 		upgraded := false
 		if newLevel > currentLevel {
@@ -421,16 +427,21 @@ func (b Billing) updateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if c, err := card.Update(data.ID, &stripe.CardParams{Customer: account.StripeID, Month: data.Month, Year: data.Month, CVC: data.CVC}); err != nil {
+	if c, err := card.Update(data.ID, &stripe.CardParams{
+			Customer: &account.StripeID, 
+			ExpMonth: &data.Month, 
+			ExpYear: &data.Month, 
+			CVC: &data.CVC,
+	}); err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 	} else {
 		card := BillingCardData{
 			ID:         c.ID,
 			Name:       c.Name,
-			Number:     c.LastFour,
-			Month:      fmt.Sprintf("%d", c.Month),
-			Year:       fmt.Sprintf("%d", c.Year),
-			Expiration: fmt.Sprintf("%d / %d", c.Month, c.Year),
+			Number:     c.Last4,
+			Month:      fmt.Sprintf("%d", c.ExpMonth),
+			Year:       fmt.Sprintf("%d", c.ExpYear),
+			Expiration: fmt.Sprintf("%d / %d", c.ExpMonth, c.ExpYear),
 			Brand:      string(c.Brand),
 		}
 		engine.Respond(w, r, http.StatusOK, card)
@@ -454,13 +465,19 @@ func (b Billing) addCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if c, err := card.New(&stripe.CardParams{Customer: account.StripeID, Name: data.Name, Number: data.Number, Month: data.Month, Year: data.Year, CVC: data.CVC}); err != nil {
+	if c, err := card.New(&stripe.CardParams{
+		Customer:   &account.StripeID, 
+		Name:       &data.Name, 
+		Number:     &data.Number, 
+		ExpMonth:   &data.Month, 
+		ExpYear:    &data.Year, 
+		CVC:        &data.CVC}); err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 	} else {
 		card := BillingCardData{
 			ID:         c.ID,
-			Number:     c.LastFour,
-			Expiration: fmt.Sprintf("%d / %d", c.Month, c.Year),
+			Number:     c.Last4,
+			Expiration: fmt.Sprintf("%d / %d", c.ExpMonth, c.ExpYear),
 			Brand:      string(c.Brand),
 		}
 		engine.Respond(w, r, http.StatusOK, card)
@@ -480,7 +497,7 @@ func (b Billing) deleteCard(w http.ResponseWriter, r *http.Request) {
 
 	cardID := mux.Vars(r)["id"]
 
-	if _, err := card.Del(cardID, &stripe.CardParams{Customer: account.StripeID}); err != nil {
+	if _, err := card.Del(cardID, &stripe.CardParams{Customer: &account.StripeID}); err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 	} else {
 		engine.Respond(w, r, http.StatusOK, true)
@@ -500,7 +517,7 @@ func (b Billing) invoices(w http.ResponseWriter, r *http.Request) {
 
 	var invoices []*stripe.Invoice
 
-	iter := invoice.List(&stripe.InvoiceListParams{Customer: account.StripeID})
+	iter := invoice.List(&stripe.InvoiceListParams{Customer: &account.StripeID})
 	for iter.Next() {
 		invoices = append(invoices, iter.Invoice())
 	}
@@ -519,7 +536,7 @@ func (b Billing) getNextInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	i, err := invoice.GetNext(&stripe.InvoiceParams{Customer: account.StripeID})
+	i, err := invoice.GetNext(&stripe.InvoiceParams{Customer: &account.StripeID})
 	if err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 		return
