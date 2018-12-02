@@ -4,7 +4,7 @@ package mongo
 
 import (
 	"github.com/dstpierre/gosaas/data/model"
-	mgo "gopkg.in/mgo.v2"
+	mgo "github.com/globalsign/mgo"
 )
 
 type Admin struct {

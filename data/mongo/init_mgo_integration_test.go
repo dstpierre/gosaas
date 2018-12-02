@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/dstpierre/gosaas/data/model"
-	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	mgo "github.com/globalsign/mgo"
+	"github.com/globalsign/mgo/bson"
 )
 
 const (

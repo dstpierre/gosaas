@@ -9,8 +9,7 @@ import (
 
 // NewToken returns a token combining an id with a unique identifier
 func NewToken(id Key) string {
-	t, _ := uuid.NewV4()
-	return fmt.Sprintf("%s|%s", keyToString(id), t.String())
+	return fmt.Sprintf("%s|%s", keyToString(id), uuid.NewV4())
 }
 
 // ParseToken returns the id and uuid for a given token

@@ -5,7 +5,7 @@ import (
 
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
+	"github.com/globalsign/mgo/bson"
 )
 
 type auth struct {

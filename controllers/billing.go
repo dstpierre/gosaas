@@ -12,7 +12,6 @@ import (
 	"github.com/dstpierre/gosaas/data/model"
 	"github.com/dstpierre/gosaas/engine"
 	"github.com/dstpierre/gosaas/queue"
-	"github.com/gorilla/mux"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/card"
 	"github.com/stripe/stripe-go/customer"
@@ -83,6 +82,10 @@ func (b Billing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			b.changePlan(w, r)
 		} else if head == "webhooks" {
 			b.stripe(w, r)
+		}
+	} else if r.Method == http.MethodDelete {
+		if head == "card" {
+			b.deleteCard(w, r)
 		}
 	}
 }
@@ -235,15 +238,15 @@ func (b Billing) start(w http.ResponseWriter, r *http.Request) {
 		engine.Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
-	
+
 	p := &stripe.CustomerParams{Email: &keys.Email}
 	p.SetSource(&stripe.CardParams{
-		Name:   &data.Card.Name,
-		Number: &data.Card.Number,
-		ExpMonth:  &data.Card.Month,
-		ExpYear:   &data.Card.Year,
-		CVC:    &data.Card.CVC,
-		AddressZip:    &data.Zip,
+		Name:       &data.Card.Name,
+		Number:     &data.Card.Number,
+		ExpMonth:   &data.Card.Month,
+		ExpYear:    &data.Card.Year,
+		CVC:        &data.Card.CVC,
+		AddressZip: &data.Zip,
 	})
 
 	c, err := customer.New(p)
@@ -383,7 +386,7 @@ func (b Billing) changePlan(w http.ResponseWriter, r *http.Request) {
 			Plan:     &plan,
 			Quantity: &seatsptr,
 		}
-		
+
 		// if we upgrade we need to change billing cycle date
 		upgraded := false
 		if newLevel > currentLevel {
@@ -428,10 +431,10 @@ func (b Billing) updateCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c, err := card.Update(data.ID, &stripe.CardParams{
-			Customer: &account.StripeID, 
-			ExpMonth: &data.Month, 
-			ExpYear: &data.Month, 
-			CVC: &data.CVC,
+		Customer: &account.StripeID,
+		ExpMonth: &data.Month,
+		ExpYear:  &data.Month,
+		CVC:      &data.CVC,
 	}); err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 	} else {
@@ -466,12 +469,12 @@ func (b Billing) addCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if c, err := card.New(&stripe.CardParams{
-		Customer:   &account.StripeID, 
-		Name:       &data.Name, 
-		Number:     &data.Number, 
-		ExpMonth:   &data.Month, 
-		ExpYear:    &data.Year, 
-		CVC:        &data.CVC}); err != nil {
+		Customer: &account.StripeID,
+		Name:     &data.Name,
+		Number:   &data.Number,
+		ExpMonth: &data.Month,
+		ExpYear:  &data.Year,
+		CVC:      &data.CVC}); err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
 	} else {
 		card := BillingCardData{
@@ -495,7 +498,7 @@ func (b Billing) deleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cardID := mux.Vars(r)["id"]
+	cardID, _ := engine.ShiftPath(r.URL.Path)
 
 	if _, err := card.Del(cardID, &stripe.CardParams{Customer: &account.StripeID}); err != nil {
 		engine.Respond(w, r, http.StatusInternalServerError, err)
