@@ -16,7 +16,8 @@ import (
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), ContextRequestStart, time.Now())
-		ctx = context.WithValue(ctx, ContextRequestID, uuid.NewV4().String())
+		t, _ := uuid.NewV4()
+		ctx = context.WithValue(ctx, ContextRequestID, t.String())
 
 		dr, err := httputil.DumpRequest(r, true)
 		if err != nil {
