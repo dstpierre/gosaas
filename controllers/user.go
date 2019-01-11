@@ -2,13 +2,11 @@ package controllers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/dstpierre/gosaas/data"
 	"github.com/dstpierre/gosaas/data/model"
-	"github.com/dstpierre/gosaas/data/mongo"
 	"github.com/dstpierre/gosaas/engine"
 )
 
@@ -34,7 +32,7 @@ func (u User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		u.detail(w, r)
 		return
 	}
-	newError(fmt.Errorf("path not found"), http.StatusNotFound).Handler.ServeHTTP(w, r)
+	engine.NewError(fmt.Errorf("path not found"), http.StatusNotFound).Handler.ServeHTTP(w, r)
 }
 
 func (u User) profile(w http.ResponseWriter, r *http.Request) {
@@ -58,16 +56,18 @@ func (u User) detail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var wh data.WebhookServices
-	switch v := db.Webhooks.(type) {
-	case *mongo.Webhooks:
-		wh = &mongo.Webhooks{}
-	default:
-		log.Println("unhandled data type")
-		wh = v
-	}
-	wh.RefreshSession(db.Connection, db.DatabaseName)
-	go sendWebhook(wh, engine.WebhookEventUserDetail, user)
+	/*
+		var wh data.WebhookServices
+		switch v := db.Webhooks.(type) {
+		case *model.Webhooks:
+			wh = &model.Webhooks{}
+		default:
+			log.Println("unhandled data type")
+			wh = v
+		}
+		wh.RefreshSession(db.Connection, db.DatabaseName)
+		go sendWebhook(wh, engine.WebhookEventUserDetail, user)
+	*/
 
 	result.ID = user.ID
 	result.Email = user.Email

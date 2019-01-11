@@ -4,7 +4,6 @@ package mem
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/dstpierre/gosaas/data/model"
@@ -69,13 +68,8 @@ func (u *Users) RemoveToken(accountID, userID, tokenID model.Key) error {
 	return nil
 }
 
-func (u *Users) Auth(accountID, token string, pat bool) (*model.Account, *model.User, error) {
-	id, err := strconv.Atoi(accountID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	acct, err := u.GetDetail(id)
+func (u *Users) Auth(accountID model.Key, token string, pat bool) (*model.Account, *model.User, error) {
+	acct, err := u.GetDetail(accountID)
 	if err != nil {
 		return nil, nil, err
 	}

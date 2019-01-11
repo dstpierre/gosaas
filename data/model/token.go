@@ -6,13 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/globalsign/mgo/bson"
 	uuid "github.com/satori/go.uuid"
 )
 
 // NewToken returns a token combining an id with a unique identifier
 func NewToken(id Key) string {
-	return fmt.Sprintf("%s|%s", keyToString(id), uuid.NewV4())
+	return fmt.Sprintf("%s|%s", KeyToString(id), uuid.NewV4())
 }
 
 // ParseToken returns the id and uuid for a given token
@@ -35,8 +34,4 @@ func NewFriendlyID() string {
 			n.Minute(),
 			n.Second()))
 	return fmt.Sprintf("%x", i)
-}
-
-func NewID() Key {
-	return bson.NewObjectId()
 }

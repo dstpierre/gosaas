@@ -34,6 +34,7 @@ type Roles int
 
 const (
 	RolePublic Roles = 0
+	RoleFree         = 10
 	RoleUser         = 20
 	RoleAdmin        = 99
 )

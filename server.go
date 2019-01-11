@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/dstpierre/gosaas/data"
-	"github.com/dstpierre/gosaas/data/model"
 	"github.com/dstpierre/gosaas/engine"
 )
 
@@ -54,7 +53,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r, ok := s.Routes[head]; ok {
 		next = r
 	} else {
-		next = newError(fmt.Errorf("path not found"), http.StatusNotFound)
+		next = engine.NewError(fmt.Errorf("path not found"), http.StatusNotFound)
 	}
 
 	ctx = context.WithValue(ctx, engine.ContextMinimumRole, next.MinimumRole)
@@ -70,14 +69,4 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	next.Handler = s.Throttler(next.Handler)
 
 	next.Handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-func newError(err error, statusCode int) *engine.Route {
-	return &engine.Route{
-		Logger:      true,
-		MinimumRole: model.RoleUser,
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			engine.Respond(w, r, statusCode, err)
-		}),
-	}
 }

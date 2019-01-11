@@ -19,10 +19,14 @@ func Open(options ...string) (*mgo.Session, error) {
 	return conn, nil
 }
 
-func keyToString(id Key) string {
+func KeyToString(id Key) string {
 	return id.Hex()
 }
 
 func StringToKey(id string) Key {
 	return bson.ObjectIdHex(id)
+}
+
+func NewID() Key {
+	return bson.NewObjectId()
 }

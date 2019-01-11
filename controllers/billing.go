@@ -12,7 +12,7 @@ import (
 	"github.com/dstpierre/gosaas/data/model"
 	"github.com/dstpierre/gosaas/engine"
 	"github.com/dstpierre/gosaas/queue"
-	"github.com/stripe/stripe-go"
+	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/card"
 	"github.com/stripe/stripe-go/customer"
 	"github.com/stripe/stripe-go/invoice"
@@ -601,7 +601,7 @@ func (b Billing) stripe(w http.ResponseWriter, r *http.Request) {
 		// check if it's a failed payment_succeeded
 		account, err := db.Users.GetByStripe(stripeID)
 		if err != nil {
-			log.Println(fmt.Errorf("no customer matches stripe id", stripeID))
+			log.Println(fmt.Errorf("no customer matches stripe id %s", stripeID))
 			return
 		}
 
@@ -609,7 +609,7 @@ func (b Billing) stripe(w http.ResponseWriter, r *http.Request) {
 			//TODO: Send emails
 
 			if err := db.Users.Cancel(account.ID); err != nil {
-				log.Println(fmt.Errorf("unable to cancel this account", account.ID))
+				log.Println(fmt.Errorf("unable to cancel this account %v", account.ID))
 				return
 			}
 		}

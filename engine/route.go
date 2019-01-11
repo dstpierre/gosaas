@@ -18,3 +18,13 @@ type Route struct {
 
 	Handler http.Handler
 }
+
+func NewError(err error, statusCode int) *Route {
+	return &Route{
+		Logger:      true,
+		MinimumRole: model.RolePublic,
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			Respond(w, r, statusCode, err)
+		}),
+	}
+}
