@@ -142,7 +142,7 @@ func (u *Users) ConvertToPaid(id model.Key, stripeID, subID, plan string, yearly
 			u.users[i].StripeID = stripeID
 			u.users[i].SubscriptionID = subID
 			u.users[i].Plan = plan
-			u.users[i].IsYearly = IsYearly
+			u.users[i].IsYearly = yearly
 			u.users[i].Seats = seats
 			u.users[i].SubscribedOn = time.Now()
 			break
@@ -155,7 +155,7 @@ func (u *Users) ChangePlan(id model.Key, plan string, yearly bool) error {
 	for i := 0; i < len(u.users); i++ {
 		if u.users[i].ID == id {
 			u.users[i].Plan = plan
-			u.users[i].IsYearly = IsYearly
+			u.users[i].IsYearly = yearly
 			break
 		}
 	}
