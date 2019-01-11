@@ -17,4 +17,6 @@ const (
 	ContextRequestID
 	// ContextRequestDump holds the request data
 	ContextRequestDump
+	// ContextLanguage holds the request language
+	ContextLanguage
 )

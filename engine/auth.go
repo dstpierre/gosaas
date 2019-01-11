@@ -28,9 +28,15 @@ func Authenticator(next http.Handler) http.Handler {
 		ctx := r.Context()
 		mr := ctx.Value(ContextMinimumRole).(model.Roles)
 
+		if mr == model.RolePublic {
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
 		key, pat, err := extractKeyFromRequest(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		// if there's no authentication or an error
+		if len(key) == 0 || err != nil {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}
 
@@ -45,19 +51,19 @@ func Authenticator(next http.Handler) http.Handler {
 		if len(a.Email) > 0 {
 			ctx = context.WithValue(ctx, ContextAuth, a)
 		} else {
-			fmt.Println("database call for auth", key)
 			db := ctx.Value(ContextDatabase).(*data.DB)
 
-			id, _ := model.ParseToken(key)
-			acct, user, err := db.Users.Auth(id, key, pat)
+			id, t := model.ParseToken(key)
+			acct, usr, err := db.Users.Auth(model.StringToKey(id), t, pat)
 			if err != nil {
 				http.Error(w, "invalid token key", http.StatusUnauthorized)
 				return
 			}
 
 			a.AccountID = acct.ID
-			a.Email = user.Email
-			a.UserID = user.ID
+			a.Email = usr.Email
+			a.UserID = usr.ID
+			a.Role = usr.Role
 
 			// save it to cache
 			ca.Set(key, a, 30*time.Second)
@@ -66,8 +72,8 @@ func Authenticator(next http.Handler) http.Handler {
 		}
 
 		// we authorize the request
-		if mr < a.Role {
-			http.Error(w, "not authorized", http.StatusUnauthorized)
+		if a.Role < mr {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}
 
@@ -85,6 +91,20 @@ func extractKeyFromRequest(r *http.Request) (key string, pat bool, err error) {
 	// check the query string
 	key = r.URL.Query().Get("key")
 	if len(key) > 0 {
+		return
+	}
+
+	// check for cookie
+	ck, er := r.Cookie("X-API-KEY")
+	if er != nil {
+		// If it's ErrNoCookie we must continue
+		// otherwise this is a legit error
+		if er != http.ErrNoCookie {
+			err = er
+			return
+		}
+	} else {
+		key = ck.Value
 		return
 	}
 

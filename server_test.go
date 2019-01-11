@@ -1,6 +1,6 @@
 // +build !mgo
 
-package controllers
+package gosaas
 
 import (
 	"log"

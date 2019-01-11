@@ -2,8 +2,11 @@ package model
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/globalsign/mgo/bson"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -19,4 +22,21 @@ func ParseToken(token string) (string, string) {
 		return "", ""
 	}
 	return pairs[0], pairs[1]
+}
+
+func NewFriendlyID() string {
+	n := time.Now()
+	i, _ := strconv.Atoi(
+		fmt.Sprintf("%d%d%d%d%d%d",
+			n.Year()-2000,
+			int(n.Month()),
+			n.Day(),
+			n.Hour(),
+			n.Minute(),
+			n.Second()))
+	return fmt.Sprintf("%x", i)
+}
+
+func NewID() Key {
+	return bson.NewObjectId()
 }

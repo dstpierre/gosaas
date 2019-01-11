@@ -9,7 +9,9 @@ import (
 // Route represent a web handler with optional middlewares
 type Route struct {
 	// middleware
-	Logger bool
+	WithDB           bool
+	Logger           bool
+	EnforceRateLimit bool
 
 	// authorization
 	MinimumRole model.Roles

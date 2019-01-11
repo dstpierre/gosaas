@@ -1,4 +1,4 @@
-package controllers
+package gosaas
 
 import (
 	"context"
@@ -10,50 +10,49 @@ import (
 	"github.com/dstpierre/gosaas/engine"
 )
 
-// API is the starting point of our API.
-// Responsible for routing the request to the correct handler
-type API struct {
+// Server is the starting point of the backend.
+// Responsible for routing requests to handlers.
+type Server struct {
 	DB            *data.DB
 	Logger        func(http.Handler) http.Handler
 	Authenticator func(http.Handler) http.Handler
 	Throttler     func(http.Handler) http.Handler
 	RateLimiter   func(http.Handler) http.Handler
-	User          *engine.Route
+	Routes        map[string]*engine.Route
 }
 
 // NewAPI returns a production API with all middlewares
-func NewAPI() *API {
-	return &API{
+func NewServer(routes map[string]*engine.Route) *Server {
+	return &Server{
 		Logger:        engine.Logger,
 		Authenticator: engine.Authenticator,
 		Throttler:     engine.Throttler,
 		RateLimiter:   engine.RateLimiter,
+		Routes:        routes,
 	}
 }
 
-func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, engine.ContextOriginalPath, r.URL.Path)
 
-	if a.DB.CopySession {
-		fmt.Println("copy mongo session")
-		a.DB.Users.RefreshSession(a.DB.Connection, a.DB.DatabaseName)
-		a.DB.Webhooks.RefreshSession(a.DB.Connection, a.DB.DatabaseName)
+	if s.DB.CopySession {
+		s.DB.Users.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
+		s.DB.Webhooks.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
 
 		defer func() {
-			fmt.Println("closing mongo session")
-			a.DB.Users.Close()
-			a.DB.Webhooks.Close()
+			s.DB.Users.Close()
+			s.DB.Webhooks.Close()
 		}()
 	}
 
-	ctx = context.WithValue(ctx, engine.ContextDatabase, a.DB)
+	ctx = context.WithValue(ctx, engine.ContextDatabase, s.DB)
 
 	var next *engine.Route
 	var head string
 	head, r.URL.Path = engine.ShiftPath(r.URL.Path)
-	if head == "user" {
-		next = newUser()
+	if r, ok := s.Routes[head]; ok {
+		next = r
 	} else {
 		next = newError(fmt.Errorf("path not found"), http.StatusNotFound)
 	}
@@ -61,14 +60,14 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, engine.ContextMinimumRole, next.MinimumRole)
 
 	// make sure we are authenticating all calls
-	next.Handler = a.Authenticator(next.Handler)
+	next.Handler = s.Authenticator(next.Handler)
 
 	if next.Logger {
-		next.Handler = a.Logger(next.Handler)
+		next.Handler = s.Logger(next.Handler)
 	}
 
-	next.Handler = a.RateLimiter(next.Handler)
-	next.Handler = a.Throttler(next.Handler)
+	next.Handler = s.RateLimiter(next.Handler)
+	next.Handler = s.Throttler(next.Handler)
 
 	next.Handler.ServeHTTP(w, r.WithContext(ctx))
 }

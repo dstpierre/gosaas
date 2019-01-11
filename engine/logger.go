@@ -9,7 +9,7 @@ import (
 
 	"github.com/dstpierre/gosaas/cache"
 	"github.com/dstpierre/gosaas/data/model"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // Logger middleware that log request information

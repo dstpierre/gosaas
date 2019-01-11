@@ -22,3 +22,7 @@ func Open(options ...string) (*mgo.Session, error) {
 func keyToString(id Key) string {
 	return id.Hex()
 }
+
+func StringToKey(id string) Key {
+	return bson.ObjectIdHex(id)
+}

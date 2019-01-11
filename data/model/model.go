@@ -33,9 +33,9 @@ type Trial struct {
 type Roles int
 
 const (
-	RoleAdmin Roles = iota
-	RoleUser
-	RoleFree
+	RolePublic Roles = 0
+	RoleUser         = 20
+	RoleAdmin        = 99
 )
 
 type User struct {

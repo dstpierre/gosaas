@@ -53,18 +53,9 @@ func (u *Users) RemoveToken(accountID, userID, tokenID model.Key) error {
 	return u.DB.C("users").Update(where, update)
 }
 
-func (u *Users) Auth(accountID, token string, pat bool) (*model.Account, *model.User, error) {
-	if bson.IsObjectIdHex(accountID) == false {
-		return nil, nil, fmt.Errorf("this account id is invalid %s", accountID)
-	}
-
-	id := bson.ObjectIdHex(accountID)
-
-	fmt.Println("looking account", id)
-
-	acct, err := u.GetDetail(id)
+func (u *Users) Auth(accountID model.Key, token string, pat bool) (*model.Account, *model.User, error) {
+	acct, err := u.GetDetail(accountID)
 	if err != nil {
-		fmt.Println("cannot find acct", err)
 		return nil, nil, err
 	}
 
@@ -78,7 +69,6 @@ func (u *Users) Auth(accountID, token string, pat bool) (*model.Account, *model.
 				}
 			}
 		} else {
-			fmt.Println("comparing", token, "with", usr.Token)
 			if usr.Token == token {
 				user = usr
 				break
