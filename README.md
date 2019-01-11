@@ -1,5 +1,5 @@
 <a href="https://buildsaasappingo.com/" title="Build a SaaS app in Go">
-	<img src="https://buildsaasappingo.com/public/basaig.jpg" alt="Build a SaaS app in Go" align="right" />
+	<img src="https://buildsaasappingo.com/public/basaig.jpg" alt="Build a SaaS app in Go" align="right" height="250" />
 </a>
 
 # gosaas [![Documentation](https://godoc.org/github.com/dstpierre/gosaas?status.svg)](http://godoc.org/github.com/dstpierre/gosaas) [![Build Status](https://travis-ci.org/dstpierre/gosaas.svg?branch=master)](https://travis-ci.org/dstpierre/gosaas) [![Go Report Card](https://goreportcard.com/badge/github.com/dstpierre/gosaas)](https://goreportcard.com/report/github.com/dstpierre/gosaas)  [![Coverage Status](https://coveralls.io/repos/github/dstpierre/gosaas/badge.svg?branch=master)](https://coveralls.io/github/dstpierre/gosaas?branch=master) [![GitHub issues](https://img.shields.io/github/issues/dstpierre/gosaas.svg)](https://github.com/dstpierre/gosaas/issues) [![license](https://img.shields.io/github/license/dstpierre/gosaas.svg?maxAge=2592000)](https://github.com/dstpierre/gosaas/LICENSE) [![Release](https://img.shields.io/github/release/dstpierre/gosaas.svg?label=Release)](https://github.com/dstpierre/gosaas/releases)
