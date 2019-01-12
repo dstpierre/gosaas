@@ -10,6 +10,7 @@ import (
 
 	"github.com/dstpierre/gosaas"
 	"github.com/dstpierre/gosaas/data"
+	"github.com/dstpierre/gosaas/engine"
 )
 
 func logger(next http.Handler) http.Handler {
@@ -30,10 +31,15 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 		log.Fatal("error while creating mem data ", err)
 	}
 
+	routes := make(map[string]*engine.Route)
+	routes["user"] = newUser()
+	routes["billing"] = newBilling()
+
 	mux := &gosaas.Server{
 		DB:            db,
 		Logger:        logger,
 		Authenticator: authenticator,
+		Routes:        routes,
 	}
 
 	rec := httptest.NewRecorder()

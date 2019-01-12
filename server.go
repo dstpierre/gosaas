@@ -65,8 +65,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		next.Handler = s.Logger(next.Handler)
 	}
 
-	next.Handler = s.RateLimiter(next.Handler)
-	next.Handler = s.Throttler(next.Handler)
+	if next.EnforceRateLimit {
+		next.Handler = s.RateLimiter(next.Handler)
+		next.Handler = s.Throttler(next.Handler)
+	}
 
 	next.Handler.ServeHTTP(w, r.WithContext(ctx))
 }

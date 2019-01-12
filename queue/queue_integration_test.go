@@ -1,3 +1,5 @@
+// +build integration
+
 package queue
 
 import (
@@ -41,7 +43,7 @@ func TestQueue_Setup_Queue(t *testing.T) {
 		}
 	})
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 }
 
 func TestQueue_ParseTask(t *testing.T) {
