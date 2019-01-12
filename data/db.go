@@ -1,26 +1,38 @@
 package data
 
 import (
-	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/model"
 )
 
+// DB is a database agnostic abstraction that contains a reference to
+// the database connection.
+//
+// At this moment MongoDB and an in-memory data provider are supported.
 type DB struct {
+	// DatabaseName is the name of the database used.
 	DatabaseName string
-	Connection   *model.Connection
-	CopySession  bool
+	// Connection is the reference to the database connection.
+	Connection *model.Connection
+	// CopySession indicates if the database connection should be copy of each requests (used for MongoDB).
+	CopySession bool
 
-	Users    UserServices
+	// Users contains the data access functions related to account, user and billing.
+	Users UserServices
+	// Webhooks contains the data access functions related to managing Webhooks.
 	Webhooks WebhookServices
 }
 
+// SessionRefresher is an interface that contains a function to copy the database session.
 type SessionRefresher interface {
 	RefreshSession(*model.Connection, string)
 }
 
+// SessionCloser is an interface that contains a function to close the database session.
 type SessionCloser interface {
 	Close()
 }
 
+// UserServices is an interface that contians all functions related to account, user and billing.
 type UserServices interface {
 	SessionRefresher
 	SessionCloser
@@ -36,12 +48,14 @@ type UserServices interface {
 	Cancel(id model.Key) error
 }
 
+// AdminServices TODO: investigate this...
 type AdminServices interface {
 	SessionRefresher
 	SessionCloser
 	LogRequests(reqs []model.APIRequest) error
 }
 
+// WebhookServices is an interface that contains all functions to manage webhook.
 type WebhookServices interface {
 	SessionRefresher
 	SessionCloser

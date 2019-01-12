@@ -1,4 +1,4 @@
-package engine
+package gosaas
 
 import (
 	"fmt"
@@ -8,7 +8,11 @@ import (
 	"github.com/dstpierre/gosaas/cache"
 )
 
-// RateLimiter middleware used to prevent too many call in short time span
+// RateLimiter is a middleware used to prevent too many call in short time span.
+// If the maximum allowed requests per-user is reached it will return a StatusTooManyRequests error.
+//
+// For clarity if maximum is reached a "Retry-After" HTTP header with the time in second
+// the user will need to wait before sending another request.
 func RateLimiter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var keys Auth

@@ -3,14 +3,12 @@
 package data
 
 import (
-	"fmt"
-
-	"github.com/dstpierre/gosaas/data/model"
 	"github.com/dstpierre/gosaas/data/mongo"
+	"github.com/dstpierre/gosaas/model"
 )
 
+// Open creates the database connection and initialize the MongoDB services.
 func (db *DB) Open(driverName, dataSourceName string) error {
-	fmt.Println("inside mongo")
 	conn, err := model.Open(driverName, dataSourceName)
 	if err != nil {
 		return err

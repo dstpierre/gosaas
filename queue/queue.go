@@ -24,6 +24,7 @@ var (
 	biller  *Billing
 )
 
+// New initializes the queue tasks.
 func New(rc *redis.Client, isDev bool) {
 	client = rc
 
@@ -36,6 +37,8 @@ func New(rc *redis.Client, isDev bool) {
 	}
 }
 
+// SetAsSubscriber makes this instance a Pub/Sub subscriber. Each message queued
+// will be processed by this instance.
 func SetAsSubscriber() {
 	scheduler = cron.New()
 
@@ -125,6 +128,7 @@ func parseTask(s string) (exp string, url string) {
 	return
 }
 
+// Enqueue adds a task to the queue.
 func Enqueue(id TaskID, data interface{}) error {
 	qt := QueueTask{
 		ID:      id,

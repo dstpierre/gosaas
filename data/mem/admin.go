@@ -3,7 +3,7 @@
 package mem
 
 import (
-	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/model"
 )
 
 type Admin struct {

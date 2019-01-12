@@ -9,12 +9,12 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// NewToken returns a token combining an id with a unique identifier
+// NewToken returns a token combining an id with a unique identifier.
 func NewToken(id Key) string {
 	return fmt.Sprintf("%s|%s", KeyToString(id), uuid.NewV4())
 }
 
-// ParseToken returns the id and uuid for a given token
+// ParseToken returns the id and uuid for a given token.
 func ParseToken(token string) (string, string) {
 	pairs := strings.Split(token, "|")
 	if len(pairs) != 2 {
@@ -23,6 +23,7 @@ func ParseToken(token string) (string, string) {
 	return pairs[0], pairs[1]
 }
 
+// NewFriendlyID returns a ~somewhat unique friendly id.
 func NewFriendlyID() string {
 	n := time.Now()
 	i, _ := strconv.Atoi(

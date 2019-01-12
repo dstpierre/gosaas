@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/model"
 )
 
 type Webhooks struct {

@@ -7,19 +7,26 @@ import (
 	"time"
 )
 
+// TaskID are IDs representing a specific queued task.
 type TaskID int
 
 const (
+	// TaskEmail is for sending email.
 	TaskEmail TaskID = iota
+	// TaskCreateInvoice is for creating new Stripe invoice.
 	TaskCreateInvoice
 )
 
+// QueueTask represents a queued task.
+//
+// The Data field contains the necessary data for the task to execute properly.
 type QueueTask struct {
 	ID      TaskID      `json:"id"`
 	Data    interface{} `json:"data"`
 	Created time.Time   `json:"created"`
 }
 
+// TaskExecutor is an interface used to execute tasks based on their ID.
 type TaskExecutor interface {
 	Run(t QueueTask) error
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Account represents the basic information for an account.
 type Account struct {
 	ID             Key       `bson:"_id" json:"id"`
 	Email          string    `bson:"email" json:"email"`
@@ -18,11 +19,12 @@ type Account struct {
 	Users []User `bson:"users" json:"users"`
 }
 
-// IsPaid returns if this account is a paying customer
+// IsPaid returns if this account is a paying customer.
 func (a *Account) IsPaid() bool {
 	return len(a.StripeID) > 0 && len(a.SubscriptionID) > 0
 }
 
+// Trial represents the trial information for an account.
 type Trial struct {
 	IsTrial  bool      `bson:"trial" json:"trial"`
 	Plan     string    `bson:"plan" json:"plan"`
@@ -30,15 +32,21 @@ type Trial struct {
 	Extended int       `bson:"extended" json:"extended"`
 }
 
+// Roles are used with user access control and authorization.
 type Roles int
 
 const (
+	// RolePublic for publicly accessible route.
 	RolePublic Roles = 0
-	RoleFree         = 10
-	RoleUser         = 20
-	RoleAdmin        = 99
+	// RoleFree for free user.
+	RoleFree = 10
+	// RoleUser for standard user.
+	RoleUser = 20
+	// RoleAdmin for admins.
+	RoleAdmin = 99
 )
 
+// User represents a user.
 type User struct {
 	ID           Key           `bson:"_id" json:"id"`
 	Email        string        `bson:"email" json:"email"`
@@ -48,13 +56,14 @@ type User struct {
 	AccessTokens []AccessToken `bson:"pat" json:"accessTokens"`
 }
 
+// AccessToken represents access tokens.
 type AccessToken struct {
 	ID    Key    `bson:"_id" json:"id"`
 	Name  string `bson:"name" json:"name"`
 	Token string `bson:"tok" json:"token"`
 }
 
-// APIRequest represents a single API call
+// APIRequest represents a single API call.
 type APIRequest struct {
 	ID         Key       `bson:"_id" json:"id"`
 	AccountID  Key       `bson:"accountId" json:"accountId"`
@@ -65,6 +74,7 @@ type APIRequest struct {
 	RequestID  string    `bson:"reqid" json:"reqId"`
 }
 
+// Webhook represents a webhook subscription.
 type Webhook struct {
 	ID        Key       `bson:"_id" json:"id"`
 	AccountID Key       `bson:"accountId" json:"accountId"`

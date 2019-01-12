@@ -1,4 +1,4 @@
-package engine
+package gosaas
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 
 	"github.com/dstpierre/gosaas/cache"
 	"github.com/dstpierre/gosaas/data"
-	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/model"
 )
 
-// Auth represents an authenticated user
+// Auth represents an authenticated user.
 type Auth struct {
 	AccountID model.Key
 	UserID    model.Key
@@ -22,7 +22,15 @@ type Auth struct {
 	Role      model.Roles
 }
 
-// Authenticator middleware used to authenticate requests
+// Authenticator middleware used to authenticate requests.
+//
+// There are 4 ways to authenticate a request:
+// 1. Via an HTTP header named X-API-KEY.
+// 2. Via a querystring parameter named "key=token".
+// 3. Via a cookie named X-API-KEY.
+// 4. Via basic authentication.
+//
+// For routes with MinimumRole set as model.RolePublic there's no authentication performed.
 func Authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

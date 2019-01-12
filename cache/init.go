@@ -29,6 +29,10 @@ func init() {
 	rc = c
 }
 
+// New initializes the queue.New
+//
+// The queueProcessor flag indicate if this instance will act
+// as the Pub/Sub subscriber. There must be only one subscriber.
 func New(queueProcessor, isDev bool) {
 	queue.New(rc, isDev)
 

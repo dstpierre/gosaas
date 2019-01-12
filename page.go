@@ -1,4 +1,4 @@
-package engine
+package gosaas
 
 import (
 	"encoding/json"
@@ -53,6 +53,16 @@ func loadTemplates() {
 	pageTemplates = t
 }
 
+// ServePage will render and respond with an HTML template.ServePage
+//
+// HTML templates should be saved into a directory named templates.ServePage
+//
+// Example usage:
+//
+// 	func handler(w http.ResponseWriter, r *http.Request) {
+// 		data := HomePage{Title: "Hello world!"}
+// 		gosaas.ServePage(w, r, "index.html", data)
+// 	}
 func ServePage(w http.ResponseWriter, r *http.Request, name string, data interface{}) {
 	t := pageTemplates.Lookup(name)
 
@@ -99,6 +109,17 @@ func loadLanguagePacks() {
 	}
 }
 
+// Translate finds a key in a language pack file (saved in directory named languagepack)
+// and return the value as template.HTML so it's safe to use HTML inside the language pack file.Translate
+//
+// The language pack file are simple JSON file named lng.json like en.json:
+//
+// 	{
+// 		"lang": "en",
+// 		"keys": [
+// 			{"key": "landing-title", "value": "Welcome to my site"}
+// 		]
+// 	}
 func Translate(lng, key string) template.HTML {
 	if s, ok := languagePacks[lng][key]; ok {
 		return template.HTML(s)
@@ -106,6 +127,7 @@ func Translate(lng, key string) template.HTML {
 	return template.HTML(fmt.Sprintf("key %s not found", key))
 }
 
+// Translatef finds a translation key and substitute the formatting parameters.
 func Translatef(lng, key string, a ...interface{}) string {
 	if s, ok := languagePacks[lng][key]; ok {
 		return fmt.Sprintf(s, a...)
@@ -113,6 +135,7 @@ func Translatef(lng, key string, a ...interface{}) string {
 	return fmt.Sprintf("key %s not found", key)
 }
 
+// BUG(dom): This needs more thinking...
 func ExtractPageAndFilter(r *http.Request) (page int, filter string) {
 	p := r.URL.Query().Get("p")
 	if len(p) > 0 {

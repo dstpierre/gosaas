@@ -12,7 +12,7 @@ import (
 // Auth is used to get/set authentication related keys
 type Auth struct{}
 
-// Exists returns the authentication in cache
+// Exists returns the authentication from cache.
 func (x *Auth) Exists(key string, v interface{}) error {
 	s, err := rc.Get(key).Result()
 	if err != nil {
@@ -26,7 +26,7 @@ func (x *Auth) Exists(key string, v interface{}) error {
 	return dec.Decode(v)
 }
 
-// Set cache this key for 30 minutes
+// Set cache this key (authentication) for 30 minutes.
 func (x *Auth) Set(key string, v interface{}, expiration time.Duration) error {
 	buf := bytes.NewBuffer(nil)
 	enc := gob.NewEncoder(buf)

@@ -1,12 +1,12 @@
-package engine
+package gosaas
 
 import (
 	"net/http"
 
-	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/model"
 )
 
-// Route represent a web handler with optional middlewares
+// Route represents a web handler with optional middlewares.
 type Route struct {
 	// middleware
 	WithDB           bool
@@ -19,6 +19,7 @@ type Route struct {
 	Handler http.Handler
 }
 
+// NewError returns a new route that simply Respond with the error and status code.
 func NewError(err error, statusCode int) *Route {
 	return &Route{
 		Logger:      true,

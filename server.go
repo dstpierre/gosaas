@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/dstpierre/gosaas/data"
-	"github.com/dstpierre/gosaas/engine"
 )
 
 // Server is the starting point of the backend.
+//
 // Responsible for routing requests to handlers.
 type Server struct {
 	DB            *data.DB
@@ -17,23 +17,28 @@ type Server struct {
 	Authenticator func(http.Handler) http.Handler
 	Throttler     func(http.Handler) http.Handler
 	RateLimiter   func(http.Handler) http.Handler
-	Routes        map[string]*engine.Route
+	Routes        map[string]*Route
 }
 
-// NewAPI returns a production API with all middlewares
-func NewServer(routes map[string]*engine.Route) *Server {
+// NewServer returns a production server with all available middlewares.
+// Only the top level routes needs to be passed as parameter.
+func NewServer(routes map[string]*Route) *Server {
 	return &Server{
-		Logger:        engine.Logger,
-		Authenticator: engine.Authenticator,
-		Throttler:     engine.Throttler,
-		RateLimiter:   engine.RateLimiter,
+		Logger:        Logger,
+		Authenticator: Authenticator,
+		Throttler:     Throttler,
+		RateLimiter:   RateLimiter,
 		Routes:        routes,
 	}
 }
 
+// ServeHTTP is where the top level routes get matched with the map[string]*gosaas.Route
+// received from the call to NewServer. Middleware are applied based on the found route properties.
+//
+// If no route can be found an error is returned.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	ctx = context.WithValue(ctx, engine.ContextOriginalPath, r.URL.Path)
+	ctx = context.WithValue(ctx, ContextOriginalPath, r.URL.Path)
 
 	if s.DB.CopySession {
 		s.DB.Users.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
@@ -45,18 +50,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 
-	ctx = context.WithValue(ctx, engine.ContextDatabase, s.DB)
+	ctx = context.WithValue(ctx, ContextDatabase, s.DB)
 
-	var next *engine.Route
+	var next *Route
 	var head string
-	head, r.URL.Path = engine.ShiftPath(r.URL.Path)
+	head, r.URL.Path = ShiftPath(r.URL.Path)
 	if r, ok := s.Routes[head]; ok {
 		next = r
 	} else {
-		next = engine.NewError(fmt.Errorf("path not found"), http.StatusNotFound)
+		next = NewError(fmt.Errorf("path not found"), http.StatusNotFound)
 	}
 
-	ctx = context.WithValue(ctx, engine.ContextMinimumRole, next.MinimumRole)
+	ctx = context.WithValue(ctx, ContextMinimumRole, next.MinimumRole)
 
 	// make sure we are authenticating all calls
 	next.Handler = s.Authenticator(next.Handler)

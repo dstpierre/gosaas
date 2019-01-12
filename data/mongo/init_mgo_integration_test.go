@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/model"
 	mgo "github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
 )

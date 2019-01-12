@@ -1,4 +1,4 @@
-package engine
+package gosaas
 
 import (
 	"encoding/json"
@@ -6,7 +6,14 @@ import (
 	"net/http"
 )
 
-// Respond return an object with specific status as JSON
+// Respond return an strruct with specific status as JSON.
+//
+// Example usage:
+//
+// 	func handler(w http.ResponseWriter, r *http.Request) {
+// 		task := Task{ID: 123, Name: "My Task", Done: false}
+// 		gosaas.Respond(w, r, http.StatusOK, task)
+// 	}
 func Respond(w http.ResponseWriter, r *http.Request, status int, data interface{}) error {
 	// change error into a real JSON serializable object
 	if e, ok := data.(error); ok {
@@ -40,7 +47,17 @@ func Respond(w http.ResponseWriter, r *http.Request, status int, data interface{
 	return nil
 }
 
-// ParseBody parses the request body into a struct
+// ParseBody parses the request JSON body into a struct.ParseBody
+//
+// Example usage:
+//
+// 	func handler(w http.ResponseWriter, r *http.Request) {
+// 		var task Task
+// 		if err := gosaas.ParseBody(r.Body, &task); err != nil {
+// 			gosaas.Respond(w, r, http.StatusBadRequest, err)
+// 			return
+// 		}
+// 	}
 func ParseBody(body io.ReadCloser, result interface{}) error {
 	decoder := json.NewDecoder(body)
 	return decoder.Decode(result)

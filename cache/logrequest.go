@@ -19,7 +19,7 @@ func LogRequest(v interface{}) error {
 	return nil
 }
 
-// DequeueRequests returns all pending requests ready to be inserted into the database
+// DequeueRequests returns all pending requests ready to be inserted into the database.
 func DequeueRequests() ([]string, error) {
 	return rc.LRange("reqlog", 0, -1).Result()
 }

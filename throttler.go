@@ -1,4 +1,4 @@
-package engine
+package gosaas
 
 import (
 	"fmt"
@@ -8,7 +8,10 @@ import (
 	"github.com/dstpierre/gosaas/cache"
 )
 
-// Throttler middleware used to throttle and apply rate limit to requests.
+// Throttler is a middleware used to throttle and apply rate limit to requests.
+//
+// This is currently set to 9999 calls limit per day. If the limit is reached
+// the middleware returns an error with the code StatusTooManyRequests.
 func Throttler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var keys Auth

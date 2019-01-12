@@ -20,7 +20,8 @@ log_error() {
 }
 
 run_gofmt() {
-  GOFMT_FILES=$(gofmt -l .)
+  GOFILES_NOVENDOR=$(find . -type f -name '*.go' -not -path "./vendor/*")
+  GOFMT_FILES=$(gofmt -l $GOFILES_NOVENDOR)
   if [ -n "$GOFMT_FILES" ]
   then
     log_error "gofmt failed for the following files:
@@ -32,7 +33,8 @@ please run 'gofmt -w .' on your changes before committing."
 }
 
 run_golint() {
-  GOLINT_ERRORS=$(golint ./... | grep -v "Id should be")
+  GOFILES_NOVENDOR=$(find . -type f -name '*.go' -not -path "./vendor/*")
+  GOLINT_ERRORS=$(golint $GOFILES_NOVENDOR)
   if [ -n "$GOLINT_ERRORS" ]
   then
     log_error "golint failed for the following reasons:

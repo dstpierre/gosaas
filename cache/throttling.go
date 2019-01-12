@@ -40,7 +40,7 @@ func increaseThrottle(key string, expire time.Duration) (int64, error) {
 	return i, nil
 }
 
-// GetThrottleExpiration returns the duration before a key expire for throttling
+// GetThrottleExpiration returns the duration before a key expire for throttling.
 func GetThrottleExpiration(key string) (time.Duration, error) {
 	key = fmt.Sprintf("%s_t", key)
 

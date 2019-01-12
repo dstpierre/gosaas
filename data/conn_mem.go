@@ -4,9 +4,10 @@ package data
 
 import (
 	"github.com/dstpierre/gosaas/data/mem"
-	"github.com/dstpierre/gosaas/data/model"
+	"github.com/dstpierre/gosaas/model"
 )
 
+// Open initializes in-memory services.
 func (db *DB) Open(driverName, dataSourceName string) error {
 	conn, err := model.Open(driverName, dataSourceName)
 	if err != nil {
