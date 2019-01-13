@@ -41,7 +41,6 @@ jobs: # basic units of work in a run
           name: Run unit tests
           # store the results of our tests in the $TEST_RESULTS directory
           command: |
-            trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
             go test -tags mem ./... | tee ${TEST_RESULTS}/go-test.out
 
       - run: go build # pull and build dependencies for the project
