@@ -35,10 +35,11 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	routes["billing"] = newBilling()
 
 	mux := &gosaas.Server{
-		DB:            db,
-		Logger:        logger,
-		Authenticator: authenticator,
-		Routes:        routes,
+		DB:              db,
+		Logger:          logger,
+		Authenticator:   authenticator,
+		StaticDirectory: "/public/",
+		Routes:          routes,
 	}
 
 	rec := httptest.NewRecorder()
