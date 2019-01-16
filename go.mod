@@ -12,6 +12,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.2.2 // indirect
 	github.com/stripe/stripe-go v46.0.0+incompatible
+	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
 	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )

@@ -24,3 +24,6 @@ github.com/stripe/stripe-go/customer
 github.com/stripe/stripe-go/invoice
 github.com/stripe/stripe-go/sub
 github.com/stripe/stripe-go/form
+# golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
