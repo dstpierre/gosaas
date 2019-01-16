@@ -36,11 +36,6 @@ func Authenticator(next http.Handler) http.Handler {
 		ctx := r.Context()
 		mr := ctx.Value(ContextMinimumRole).(model.Roles)
 
-		if mr == model.RolePublic {
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
-		}
-
 		key, pat, err := extractKeyFromRequest(r)
 		// if there's no authentication or an error
 		if len(key) == 0 || err != nil {
@@ -59,6 +54,13 @@ func Authenticator(next http.Handler) http.Handler {
 		if len(a.Email) > 0 {
 			ctx = context.WithValue(ctx, ContextAuth, a)
 		} else {
+			// if the route required public access we do not 
+			// perform any authentication.
+			if mr == model.RolePublic {
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+			
 			db := ctx.Value(ContextDatabase).(*data.DB)
 
 			id, t := model.ParseToken(key)

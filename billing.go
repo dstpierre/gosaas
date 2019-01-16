@@ -1,14 +1,12 @@
-package controllers
+package gosaas
 
 import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/dstpierre/gosaas"
 	"github.com/dstpierre/gosaas/data"
 	"github.com/dstpierre/gosaas/model"
 	"github.com/dstpierre/gosaas/queue"
@@ -19,8 +17,9 @@ import (
 	"github.com/stripe/stripe-go/sub"
 )
 
-func init() {
-	stripe.Key = os.Getenv("STRIPE_KEY")
+// SetStripeKey sets the Stripe Key.
+func SetStripeKey(key string) {
+	stripe.Key = key
 }
 
 // Billing handles everything related to the billing requests
@@ -51,23 +50,23 @@ type BillingCardData struct {
 	Expiration string `json:"expiration"`
 }
 
-func newBilling() *gosaas.Route {
-	var b interface{} = User{}
-	return &gosaas.Route{
+func newBilling() *Route {
+	var b interface{} = Billing{}
+	return &Route{
 		Logger:      true,
-		MinimumRole: model.RoleAdmin,
+		MinimumRole: model.RoleFree,
 		Handler:     b.(http.Handler),
 	}
 }
 
 func (b Billing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var head string
-	head, r.URL.Path = gosaas.ShiftPath(r.URL.Path)
+	head, r.URL.Path = ShiftPath(r.URL.Path)
 	if r.Method == http.MethodGet {
 		if head == "overview" {
 			b.overview(w, r)
 		} else if head == "invoices" {
-			head, r.URL.Path = gosaas.ShiftPath(r.URL.Path)
+			head, r.URL.Path = ShiftPath(r.URL.Path)
 			if head == "" {
 				b.invoices(w, r)
 			} else if head == "next" {
@@ -92,8 +91,8 @@ func (b Billing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	// this struct will be returned should we be a paid customer or not
 	ov := BillingOverview{}
@@ -101,7 +100,7 @@ func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 	// Get the current account
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusNotFound, err)
+		Respond(w, r, http.StatusNotFound, err)
 		return
 	}
 
@@ -125,14 +124,14 @@ func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		gosaas.Respond(w, r, http.StatusOK, ov)
+		Respond(w, r, http.StatusOK, ov)
 		return
 	}
 
 	// getting stripe customer
 	cus, err := customer.Get(account.StripeID, nil)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusBadRequest, err)
+		Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
 
@@ -160,7 +159,7 @@ func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	gosaas.Respond(w, r, http.StatusOK, ov)
+	Respond(w, r, http.StatusOK, ov)
 }
 
 func (b Billing) changeQuantity(stripeID, subID string, qty int) error {
@@ -230,12 +229,12 @@ type BillingNewCustomer struct {
 
 func (b Billing) start(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	var data BillingNewCustomer
-	if err := gosaas.ParseBody(r.Body, &data); err != nil {
-		gosaas.Respond(w, r, http.StatusBadRequest, err)
+	if err := ParseBody(r.Body, &data); err != nil {
+		Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
 
@@ -251,13 +250,13 @@ func (b Billing) start(w http.ResponseWriter, r *http.Request) {
 
 	c, err := customer.New(p)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
 	acct, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -287,13 +286,13 @@ func (b Billing) start(w http.ResponseWriter, r *http.Request) {
 
 	s, err := sub.New(subp)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
 	acct.TrialInfo.IsTrial = false
 	if err := db.Users.ConvertToPaid(acct.ID, c.ID, s.ID, data.Plan, data.IsYearly, seats); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -312,26 +311,26 @@ func (b Billing) start(w http.ResponseWriter, r *http.Request) {
 
 	//TODO: Trigger a new customer event
 
-	gosaas.Respond(w, r, http.StatusOK, ov)
+	Respond(w, r, http.StatusOK, ov)
 }
 
 func (b Billing) changePlan(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	var data = new(struct {
 		Plan     string `json:"plan"`
 		IsYearly bool   `json:"isYearly"`
 	})
-	if err := gosaas.ParseBody(r.Body, &data); err != nil {
-		gosaas.Respond(w, r, http.StatusBadRequest, err)
+	if err := ParseBody(r.Body, &data); err != nil {
+		Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
 
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -360,12 +359,12 @@ func (b Billing) changePlan(w http.ResponseWriter, r *http.Request) {
 	if newLevel == 0 {
 		// we need to cancel their subscriptions
 		if _, err := sub.Cancel(account.SubscriptionID, nil); err != nil {
-			gosaas.Respond(w, r, http.StatusInternalServerError, err)
+			Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
 		if err := db.Users.Cancel(account.ID); err != nil {
-			gosaas.Respond(w, r, http.StatusInternalServerError, err)
+			Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 	} else {
@@ -401,32 +400,32 @@ func (b Billing) changePlan(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if _, err := sub.Update(account.SubscriptionID, subParams); err != nil {
-			gosaas.Respond(w, r, http.StatusInternalServerError, err)
+			Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
 		if err := db.Users.ChangePlan(account.ID, plan, data.IsYearly); err != nil {
-			gosaas.Respond(w, r, http.StatusInternalServerError, err)
+			Respond(w, r, http.StatusInternalServerError, err)
 			return
 		}
-		gosaas.Respond(w, r, http.StatusOK, true)
+		Respond(w, r, http.StatusOK, true)
 	}
 }
 
 func (b Billing) updateCard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusBadRequest, err)
+		Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
 
 	var data BillingCardData
-	if err := gosaas.ParseBody(r.Body, &data); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+	if err := ParseBody(r.Body, &data); err != nil {
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -436,7 +435,7 @@ func (b Billing) updateCard(w http.ResponseWriter, r *http.Request) {
 		ExpYear:  &data.Month,
 		CVC:      &data.CVC,
 	}); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 	} else {
 		card := BillingCardData{
 			ID:         c.ID,
@@ -447,24 +446,24 @@ func (b Billing) updateCard(w http.ResponseWriter, r *http.Request) {
 			Expiration: fmt.Sprintf("%d / %d", c.ExpMonth, c.ExpYear),
 			Brand:      string(c.Brand),
 		}
-		gosaas.Respond(w, r, http.StatusOK, card)
+		Respond(w, r, http.StatusOK, card)
 	}
 }
 
 func (b Billing) addCard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusBadRequest, err)
+		Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
 
 	var data BillingCardData
-	if err := gosaas.ParseBody(r.Body, &data); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+	if err := ParseBody(r.Body, &data); err != nil {
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -475,7 +474,7 @@ func (b Billing) addCard(w http.ResponseWriter, r *http.Request) {
 		ExpMonth: &data.Month,
 		ExpYear:  &data.Year,
 		CVC:      &data.CVC}); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 	} else {
 		card := BillingCardData{
 			ID:         c.ID,
@@ -483,38 +482,38 @@ func (b Billing) addCard(w http.ResponseWriter, r *http.Request) {
 			Expiration: fmt.Sprintf("%d / %d", c.ExpMonth, c.ExpYear),
 			Brand:      string(c.Brand),
 		}
-		gosaas.Respond(w, r, http.StatusOK, card)
+		Respond(w, r, http.StatusOK, card)
 	}
 }
 
 func (b Billing) deleteCard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusBadRequest, err)
+		Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
 
-	cardID, _ := gosaas.ShiftPath(r.URL.Path)
+	cardID, _ := ShiftPath(r.URL.Path)
 
 	if _, err := card.Del(cardID, &stripe.CardParams{Customer: &account.StripeID}); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 	} else {
-		gosaas.Respond(w, r, http.StatusOK, true)
+		Respond(w, r, http.StatusOK, true)
 	}
 }
 
 func (b Billing) invoices(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -525,26 +524,26 @@ func (b Billing) invoices(w http.ResponseWriter, r *http.Request) {
 		invoices = append(invoices, iter.Invoice())
 	}
 
-	gosaas.Respond(w, r, http.StatusOK, invoices)
+	Respond(w, r, http.StatusOK, invoices)
 }
 
 func (b Billing) getNextInvoice(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
 	i, err := invoice.GetNext(&stripe.InvoiceParams{Customer: &account.StripeID})
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
-	gosaas.Respond(w, r, http.StatusOK, i)
+	Respond(w, r, http.StatusOK, i)
 }
 
 // StripeWebhook is used to grab data sent by Stripe for a webhook
@@ -574,13 +573,13 @@ type WebhookDataObjectData struct {
 
 func (b Billing) stripe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	// no matter what happen, Stripe wants us to send a 200
 	defer w.Write([]byte("ok"))
 
 	var data WebhookData
-	if err := gosaas.ParseBody(r.Body, &data); err != nil {
+	if err := ParseBody(r.Body, &data); err != nil {
 		log.Println(err)
 		return
 	}
@@ -618,14 +617,14 @@ func (b Billing) stripe(w http.ResponseWriter, r *http.Request) {
 
 func (b Billing) cancel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	keys := ctx.Value(gosaas.ContextAuth).(gosaas.Auth)
-	db := ctx.Value(gosaas.ContextDatabase).(*data.DB)
+	keys := ctx.Value(ContextAuth).(Auth)
+	db := ctx.Value(ContextDatabase).(*data.DB)
 
 	var data = new(struct {
 		Reason string `json:"reason"`
 	})
-	if err := gosaas.ParseBody(r.Body, &data); err != nil {
-		gosaas.Respond(w, r, http.StatusBadRequest, err)
+	if err := ParseBody(r.Body, &data); err != nil {
+		Respond(w, r, http.StatusBadRequest, err)
 		return
 	}
 
@@ -633,19 +632,19 @@ func (b Billing) cancel(w http.ResponseWriter, r *http.Request) {
 
 	account, err := db.Users.GetDetail(keys.AccountID)
 	if err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
 	if _, err := sub.Cancel(account.SubscriptionID, nil); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
 	if err := db.Users.Cancel(account.ID); err != nil {
-		gosaas.Respond(w, r, http.StatusInternalServerError, err)
+		Respond(w, r, http.StatusInternalServerError, err)
 		return
 	}
 
-	gosaas.Respond(w, r, http.StatusOK, true)
+	Respond(w, r, http.StatusOK, true)
 }

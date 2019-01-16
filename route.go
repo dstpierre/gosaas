@@ -29,3 +29,7 @@ func NewError(err error, statusCode int) *Route {
 		}),
 	}
 }
+
+func notFound(w http.ResponseWriter) {
+	http.Error(w, "not found", http.StatusNotFound)
+}

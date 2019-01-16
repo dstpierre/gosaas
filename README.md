@@ -2,7 +2,7 @@
 	<img src="https://buildsaasappingo.com/public/basaig.jpg" alt="Build a SaaS app in Go" align="right" height="250" />
 </a>
 
-# gosaas [![Documentation](https://godoc.org/github.com/dstpierre/gosaas?status.svg)](http://godoc.org/github.com/dstpierre/gosaas) [![CircleCI](https://circleci.com/gh/dstpierre/gosaas.svg?style=svg)](https://circleci.com/gh/dstpierre/gosaas) [![Go Report Card](https://goreportcard.com/badge/github.com/dstpierre/gosaas)](https://goreportcard.com/report/github.com/dstpierre/gosaas)  [![Release](https://img.shields.io/github/release/dstpierre/gosaas.svg?label=Release)](https://github.com/dstpierre/gosaas/releases)
+# gosaas [![Documentation](https://godoc.org/github.com/dstpierre/gosaas?status.svg)](http://godoc.org/github.com/dstpierre/gosaas) [![CircleCI](https://circleci.com/gh/dstpierre/gosaas.svg?style=svg)](https://circleci.com/gh/dstpierre/gosaas) [![Go Report Card](https://goreportcard.com/badge/github.com/dstpierre/gosaas?v=1)](https://goreportcard.com/report/github.com/dstpierre/gosaas?v=1) [![Maintainability](https://api.codeclimate.com/v1/badges/8e206ab6fd0798a483a0/maintainability)](https://codeclimate.com/github/dstpierre/gosaas/maintainability)
 
 In September 2018 I published a book named [Build a SaaS app in Go](https://buildsaasappingo.com/). This project is the transformation of what the book teaches into a library that can be used to quickly build a web app / SaaS and focusing on your core product instead of common SaaS components.
 
@@ -62,6 +62,7 @@ $> curl http://localhost:8080/test
 	- [Getting current user and database from the request Context](#context)
 * [More documentation](#more-documentation)
 * [Status and contributing](#status-and-contributing)
+* [Running the tests](#running-the-tests)
 * [Credits](#credits)
 * [Licence](#licence)
 
@@ -315,6 +316,15 @@ Here's some aspect that are still a bit rough:
 * Still not sure if the way the data package is written that it is idiomatic / easy to understand.
 * There's no way to have granularity in the authorization, i.e. if /task require `model.RoleUser` /task/delete 
 cannot have `model.RoleAdmin` as `MinimumRole`.
+
+## Running the tests
+
+At this moment the tests uses the `mem` data implementation so you need to run the tests 
+using the `mem` tag as follow:
+
+```shell
+$> go test -tags mem ./...
+```
 
 ## Credits
 

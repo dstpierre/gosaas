@@ -40,6 +40,7 @@ type UserServices interface {
 	AddToken(accountID, userID model.Key, name string) (*model.AccessToken, error)
 	RemoveToken(accountID, userID, tokenID model.Key) error
 	Auth(accountID model.Key, token string, pat bool) (*model.Account, *model.User, error)
+	GetUserByEmail(email string) (*model.User, error)
 	GetDetail(id model.Key) (*model.Account, error)
 	GetByStripe(stripeId string) (*model.Account, error)
 	SetSeats(id model.Key, seats int) error

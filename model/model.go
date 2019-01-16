@@ -32,11 +32,12 @@ type Trial struct {
 	Extended int       `bson:"extended" json:"extended"`
 }
 
-// Roles are used with user access control and authorization.
+// Roles are used with user access control and authorization. You may add custom roles in-between the
+// default ones.
 type Roles int
 
 const (
-	// RolePublic for publicly accessible route.
+	// RolePublic for publicly accessible routes.
 	RolePublic Roles = 0
 	// RoleFree for free user.
 	RoleFree = 10
@@ -49,6 +50,7 @@ const (
 // User represents a user.
 type User struct {
 	ID           Key           `bson:"_id" json:"id"`
+	AccountID    Key           `bson:"accountId" json:"accountId"`
 	Email        string        `bson:"email" json:"email"`
 	Password     string        `bson:"pw" json:"-"`
 	Token        string        `bson:"tok" json:"token"`
@@ -58,9 +60,10 @@ type User struct {
 
 // AccessToken represents access tokens.
 type AccessToken struct {
-	ID    Key    `bson:"_id" json:"id"`
-	Name  string `bson:"name" json:"name"`
-	Token string `bson:"tok" json:"token"`
+	ID     Key    `bson:"_id" json:"id"`
+	UserID Key    `bson:"userId" json:"userId"`
+	Name   string `bson:"name" json:"name"`
+	Token  string `bson:"tok" json:"token"`
 }
 
 // APIRequest represents a single API call.

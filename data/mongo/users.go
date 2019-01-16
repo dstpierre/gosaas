@@ -83,6 +83,25 @@ func (u *Users) Auth(accountID model.Key, token string, pat bool) (*model.Accoun
 	return acct, &user, nil
 }
 
+func (u *Users) GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
+	var acct model.Account
+	where := bson.M{"users.email": email}
+	fields := bson.M{"users": true}
+	if err := u.DB.C("users").Find(where).Select(fields).One(&acct); err != nil {
+		return nil, err
+	}
+
+	for _, usr := range acct.Users {
+		if usr.Email == email {
+			user = usr
+			break
+		}
+	}
+
+	return &user, nil
+}
+
 func (u *Users) GetDetail(id model.Key) (*model.Account, error) {
 	var acct model.Account
 	where := bson.M{"_id": id}

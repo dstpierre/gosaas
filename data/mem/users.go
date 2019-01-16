@@ -21,23 +21,26 @@ func (u *Users) SignUp(email, password string) (*model.Account, error) {
 		ID:    acctID,
 		Email: email,
 		Users: []model.User{{
-			Email:    email,
-			ID:       userID,
-			Password: password,
-			Token:    model.NewToken(acctID),
-			Role:     model.RoleAdmin,
+			AccountID: acctID,
+			Email:     email,
+			ID:        userID,
+			Password:  password,
+			Token:     model.NewToken(acctID),
+			Role:      model.RoleAdmin,
 		}},
 	}
 
 	u.users = append(u.users, acct)
+
 	return &acct, nil
 }
 
 func (u *Users) AddToken(accountID, userID model.Key, name string) (*model.AccessToken, error) {
 	tok := model.AccessToken{
-		ID:    userID * 300,
-		Name:  name,
-		Token: model.NewToken(accountID),
+		ID:     userID * 300,
+		UserID: userID,
+		Name:   name,
+		Token:  model.NewToken(accountID),
 	}
 
 	for _, acct := range u.users {
@@ -96,6 +99,27 @@ func (u *Users) Auth(accountID model.Key, token string, pat bool) (*model.Accoun
 	}
 
 	return acct, &user, nil
+}
+
+func (u *Users) GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
+	for _, acct := range u.users {
+		for _, usr := range acct.Users {
+			if usr.Email == email {
+				user = usr
+				break
+			}
+		}
+
+		if len(user.Email) > 0 {
+			break
+		}
+	}
+
+	if len(user.Email) == 0 {
+		return nil, fmt.Errorf("cannot find %s", email)
+	}
+	return &user, nil
 }
 
 func (u *Users) GetDetail(id model.Key) (*model.Account, error) {
@@ -177,7 +201,7 @@ func (u *Users) RefreshSession(conn *bool, dbName string) {
 			Email:    "test@domain.com",
 			ID:       1,
 			Password: "unittest",
-			Token:    model.NewToken(1),
+			Token:    "unit-test-token",
 			Role:     model.RoleAdmin,
 		}},
 	})

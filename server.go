@@ -24,7 +24,36 @@ type Server struct {
 
 // NewServer returns a production server with all available middlewares.
 // Only the top level routes needs to be passed as parameter.
+//
+// There's three built-in implementations:
+//
+// 1. users: for user management (signup, signin, authentication, get detail, etc).
+//
+// 2. billing: for a fully functional billing process (converting from free to paid, changing plan, get invoices, etc).
+//
+// 3. webhooks: for allowing users to subscribe to events (you may trigger webhook via gosaas.SendWebhook).
+//
+// To override default inplementation you simply have to supply your own like so:
+//
+// 	routes := make(map[string]*gosaas.Route)
+// 	routes["billing"] = &gosaas.Route{Handler: billing.Route}
+//
+// This would use your own billing implementation instead of the one supplied by gosaas.
 func NewServer(routes map[string]*Route) *Server {
+	// if users, billing and webhooks are not part
+	// of the routes, we default to gosaas's implementation.
+	if _, ok := routes["users"]; !ok {
+		routes["users"] = newUser()
+	}
+
+	if _, ok := routes["billing"]; !ok {
+		routes["billing"] = newBilling()
+	}
+
+	if _, ok := routes["webhooks"]; !ok {
+		routes["webhooks"] = newWebhook()
+	}
+
 	return &Server{
 		Logger:          Logger,
 		Authenticator:   Authenticator,
@@ -54,18 +83,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, ContextOriginalPath, r.URL.Path)
 
-	if s.DB.CopySession {
-		s.DB.Users.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
-		s.DB.Webhooks.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
-
-		defer func() {
-			s.DB.Users.Close()
-			s.DB.Webhooks.Close()
-		}()
-	}
-
-	ctx = context.WithValue(ctx, ContextDatabase, s.DB)
-
 	var next *Route
 	var head string
 	head, r.URL.Path = ShiftPath(r.URL.Path)
@@ -73,6 +90,20 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		next = r
 	} else {
 		next = NewError(fmt.Errorf("path not found"), http.StatusNotFound)
+	}
+
+	if next.WithDB {
+		if s.DB.CopySession {
+			s.DB.Users.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
+			s.DB.Webhooks.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
+
+			defer func() {
+				s.DB.Users.Close()
+				s.DB.Webhooks.Close()
+			}()
+		}
+
+		ctx = context.WithValue(ctx, ContextDatabase, s.DB)
 	}
 
 	ctx = context.WithValue(ctx, ContextMinimumRole, next.MinimumRole)
