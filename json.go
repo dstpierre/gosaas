@@ -8,6 +8,13 @@ import (
 
 // Respond return an strruct with specific status as JSON.
 //
+// If data is an error it will be wrapped in a generic JSON object:
+//
+// 	{
+// 		"status": 401,
+// 		"error": "the result of data.Error()"
+// 	}
+//
 // Example usage:
 //
 // 	func handler(w http.ResponseWriter, r *http.Request) {

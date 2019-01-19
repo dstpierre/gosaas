@@ -18,6 +18,7 @@ type Server struct {
 	Authenticator   func(http.Handler) http.Handler
 	Throttler       func(http.Handler) http.Handler
 	RateLimiter     func(http.Handler) http.Handler
+	Cors            func(http.Handler) http.Handler
 	StaticDirectory string
 	Routes          map[string]*Route
 }
@@ -59,6 +60,7 @@ func NewServer(routes map[string]*Route) *Server {
 		Authenticator:   Authenticator,
 		Throttler:       Throttler,
 		RateLimiter:     RateLimiter,
+		Cors:            Cors,
 		StaticDirectory: "/public/",
 		Routes:          routes,
 	}
@@ -90,6 +92,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		next = r
 	} else {
 		next = NewError(fmt.Errorf("path not found"), http.StatusNotFound)
+	}
+
+	// are we allowing cross-origin requests for this route
+	if next.AllowCrossOrigin {
+		s.Cors(next.Handler)
 	}
 
 	if next.WithDB {

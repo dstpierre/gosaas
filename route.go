@@ -12,6 +12,7 @@ type Route struct {
 	WithDB           bool
 	Logger           bool
 	EnforceRateLimit bool
+	AllowCrossOrigin bool
 
 	// authorization
 	MinimumRole model.Roles
