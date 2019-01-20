@@ -68,7 +68,7 @@ $> curl http://localhost:8080/test
 
 ## Installation
 
-`go get github.com/dstpierre/gosaas/...`
+`go get github.com/dstpierre/gosaas
 
 ## What's included
 
@@ -231,7 +231,10 @@ func main() {
 	}
 
 	// Set as pub/sub subscriber for the queue executor if q is true
-	cache.New(*q, isDev)
+	executors := make(map[queue.TaskID]queue.TaskExecutor)
+	// if you have custom task executor you may fill this map with your own implementation 
+	// of queue.taskExecutor interface
+	cache.New(*q, isDev, executors)
 
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		log.Println(err)

@@ -29,12 +29,20 @@ func init() {
 	rc = c
 }
 
-// New initializes the queue.New
+// New initializes the queue service via the queue.New function.
 //
-// The queueProcessor flag indicate if this instance will act
+// The queueProcessor flag indicates if this instance will act
 // as the Pub/Sub subscriber. There must be only one subscriber.
-func New(queueProcessor, isDev bool) {
-	queue.New(rc, isDev)
+//
+// The ex parameter map[queue.TaskID]queue.Executor allow you to supply
+// custom executors for your own custom task. A TaskExecutor must satisfy
+// this interface.
+//
+// 	type TaskExecutor interface {
+// 		Run(t QueueTask) error
+// 	}
+func New(queueProcessor, isDev bool, ex map[queue.TaskID]queue.TaskExecutor) {
+	queue.New(rc, isDev, ex)
 
 	if queueProcessor {
 		queue.SetAsSubscriber()

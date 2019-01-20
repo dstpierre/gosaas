@@ -22,12 +22,15 @@ var (
 
 	emailer *Email
 	biller  *Billing
+
+	executors map[TaskID]TaskExecutor
 )
 
 // New initializes the queue tasks.
-func New(rc *redis.Client, isDev bool) {
+func New(rc *redis.Client, isDev bool, ex map[TaskID]TaskExecutor) {
 	client = rc
 
+	// built-in executor
 	emailer = &Email{}
 	biller = &Billing{}
 	if isDev {
@@ -35,6 +38,8 @@ func New(rc *redis.Client, isDev bool) {
 	} else {
 		emailer.Send = emailer.sendEmailProd
 	}
+
+	executors = ex
 }
 
 // SetAsSubscriber makes this instance a Pub/Sub subscriber. Each message queued
@@ -156,6 +161,10 @@ func process(msg *redis.Message) {
 		exec = emailer
 	case TaskCreateInvoice:
 		exec = biller
+	default:
+		if ex, ok := executors[qt.ID]; ok {
+			exec = ex
+		}
 	}
 
 	if err := exec.Run(qt); err != nil {
