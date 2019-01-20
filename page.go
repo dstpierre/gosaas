@@ -1,6 +1,7 @@
 package gosaas
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -10,6 +11,8 @@ import (
 	"os"
 	"path"
 	"strconv"
+
+	"github.com/dstpierre/gosaas/model"
 )
 
 var (
@@ -148,4 +151,52 @@ func ExtractPageAndFilter(r *http.Request) (page int, filter string) {
 	filter = r.URL.Query().Get("filter")
 
 	return
+}
+
+// ViewData is the base data needed for all pages to render.
+//
+// It will automatically get the user's language, role and if there's an alert
+// to display. You can view this a a wrapper around what you would have sent to the
+// page being redered.
+type ViewData struct {
+	Language string
+	Role     model.Roles
+	Alert    *Notification
+	Data     interface{}
+}
+
+// Notification can be used to display alert to the user in an HTML template.
+type Notification struct {
+	Title     template.HTML
+	Message   template.HTML
+	IsSuccess bool
+	IsError   bool
+	IsWarning bool
+}
+
+func getLanguage(ctx context.Context) string {
+	lng, ok := ctx.Value(ContextLanguage).(string)
+	if !ok {
+		lng = "en"
+	}
+	return lng
+}
+
+func getRole(ctx context.Context) model.Roles {
+	auth, ok := ctx.Value(ContextAuth).(Auth)
+	if !ok {
+		return model.RolePublic
+	}
+	return auth.Role
+}
+
+// CreateViewData wraps the data into a ViewData type where the language, role and
+// notification will be automatically added along side the data.
+func CreateViewData(ctx context.Context, alert *Notification, data interface{}) ViewData {
+	return ViewData{
+		Alert:    alert,
+		Data:     data,
+		Language: getLanguage(ctx),
+		Role:     getRole(ctx),
+	}
 }

@@ -85,6 +85,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, ContextOriginalPath, r.URL.Path)
 
+	isJSON := strings.ToLower(r.Header.Get("Content-Type")) == "application/json"
+	ctx = context.WithValue(ctx, ContextContentIsJSON, isJSON)
+
 	var next *Route
 	var head string
 	head, r.URL.Path = ShiftPath(r.URL.Path)

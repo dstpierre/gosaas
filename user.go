@@ -24,12 +24,17 @@ func newUser() *Route {
 }
 
 func (u User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("reached user")
 	var head string
 	head, r.URL.Path = ShiftPath(r.URL.Path)
 	if head == "signup" && r.Method == http.MethodPost {
 		u.signup(w, r)
-	} else if head == "signin" && r.Method == http.MethodPost {
-		u.signin(w, r)
+	} else if head == "login" {
+		if r.Method == http.MethodGet {
+			u.login(w, r)
+		} else if r.Method == http.MethodPost {
+			u.signin(w, r)
+		}
 	} else if head == "profile" && r.Method == http.MethodGet {
 		u.profile(w, r)
 	} else {
@@ -65,18 +70,29 @@ func (u User) signup(w http.ResponseWriter, r *http.Request) {
 	Respond(w, r, http.StatusCreated, acct)
 }
 
+func (u User) login(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ServePage(w, r, "login.html", CreateViewData(ctx, nil, nil))
+}
 func (u User) signin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	db := ctx.Value(ContextDatabase).(*data.DB)
+	isJSON := ctx.Value(ContextContentIsJSON).(bool)
 
 	var data = new(struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	})
 
-	if err := ParseBody(r.Body, &data); err != nil {
-		Respond(w, r, http.StatusBadRequest, err)
-		return
+	if isJSON {
+		if err := ParseBody(r.Body, &data); err != nil {
+			Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+	} else {
+		r.ParseForm()
+		data.Email = r.Form.Get("email")
+		data.Password = r.Form.Get("password")
 	}
 
 	user, err := db.Users.GetUserByEmail(data.Email)

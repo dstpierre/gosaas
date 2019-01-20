@@ -39,7 +39,7 @@ func Authenticator(next http.Handler) http.Handler {
 		key, pat, err := extractKeyFromRequest(r)
 		// if there's no authentication or an error
 		if len(key) == 0 || err != nil {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, "/users/login", http.StatusSeeOther)
 			return
 		}
 
@@ -54,13 +54,13 @@ func Authenticator(next http.Handler) http.Handler {
 		if len(a.Email) > 0 {
 			ctx = context.WithValue(ctx, ContextAuth, a)
 		} else {
-			// if the route required public access we do not 
+			// if the route required public access we do not
 			// perform any authentication.
 			if mr == model.RolePublic {
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
-			
+
 			db := ctx.Value(ContextDatabase).(*data.DB)
 
 			id, t := model.ParseToken(key)
@@ -83,7 +83,7 @@ func Authenticator(next http.Handler) http.Handler {
 
 		// we authorize the request
 		if a.Role < mr {
-			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			http.Redirect(w, r, "/users/login", http.StatusSeeOther)
 			return
 		}
 

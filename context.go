@@ -19,4 +19,6 @@ const (
 	ContextRequestDump
 	// ContextLanguage holds the request language.
 	ContextLanguage
+	// ContextContentIsJSON indicates if the request Content-Type is application/json
+	ContextContentIsJSON
 )
