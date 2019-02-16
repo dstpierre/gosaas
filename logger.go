@@ -50,7 +50,7 @@ func logRequest(r *http.Request, statusCode int) {
 	v = ctx.Value(ContextRequestDump)
 	dr, ok := v.([]byte)
 	if !ok {
-		log.Println("unable to retrieve the dump request data")
+		log.Println(path, "unable to retrieve the dump request data")
 	} else {
 		if statusCode >= http.StatusBadRequest {
 			// we don't want to log 404 not found

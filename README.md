@@ -68,7 +68,7 @@ $> curl http://localhost:8080/test
 
 ## Installation
 
-`go get github.com/dstpierre/gosaas
+`go get github.com/dstpierre/gosaas`
 
 ## What's included
 
@@ -245,7 +245,7 @@ func main() {
 
 ### Responding to requests
 
-The `engine` package exposes two useful functions:
+The `gosaas` package exposes two useful functions:
 
 **Respond**: used to return JSON:
 

@@ -200,7 +200,7 @@ func (u *Users) RefreshSession(conn *bool, dbName string) {
 		Users: []model.User{{
 			Email:    "test@domain.com",
 			ID:       1,
-			Password: "unittest",
+			Password: "$2a$10$w417b8FbmVvZaRWDHiXH4OmtnmhdJFbUlUMnQRze06mEp4f878KU2",
 			Token:    "unit-test-token",
 			Role:     model.RoleAdmin,
 		}},

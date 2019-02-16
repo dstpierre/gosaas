@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/dstpierre/gosaas/data"
+	"github.com/dstpierre/gosaas/internal/config"
 	"github.com/dstpierre/gosaas/model"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -24,11 +25,14 @@ func newUser() *Route {
 }
 
 func (u User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("reached user")
 	var head string
 	head, r.URL.Path = ShiftPath(r.URL.Path)
-	if head == "signup" && r.Method == http.MethodPost {
-		u.signup(w, r)
+	if head == "signup" {
+		if r.Method == http.MethodGet {
+			u.signup(w, r)
+		} else if r.Method == http.MethodPost {
+			u.create(w, r)
+		}
 	} else if head == "login" {
 		if r.Method == http.MethodGet {
 			u.login(w, r)
@@ -43,31 +47,73 @@ func (u User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u User) signup(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (u User) create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	db := ctx.Value(ContextDatabase).(*data.DB)
+	isJSON := ctx.Value(ContextContentIsJSON).(bool)
 
 	var data = new(struct {
 		Email string `json:"email"`
 	})
 
-	if err := ParseBody(r.Body, &data); err != nil {
-		Respond(w, r, http.StatusBadRequest, err)
-		return
+	if isJSON {
+		if err := ParseBody(r.Body, &data); err != nil {
+			Respond(w, r, http.StatusBadRequest, err)
+			return
+		}
+	} else {
+		r.ParseForm()
+
+		data.Email = r.Form.Get("email")
 	}
 
 	pw := randStringRunes(7)
 	b, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 	if err != nil {
-		Respond(w, r, http.StatusInternalServerError, err)
+		if isJSON {
+			Respond(w, r, http.StatusInternalServerError, err)
+		} else {
+			http.Redirect(w, r, config.Current.SignUpErrorRedirect, http.StatusSeeOther)
+		}
 		return
 	}
 
 	acct, err := db.Users.SignUp(data.Email, string(b))
 	if err != nil {
-		Respond(w, r, http.StatusInternalServerError, err)
+		if isJSON {
+			Respond(w, r, http.StatusInternalServerError, err)
+		} else {
+			http.Redirect(w, r, config.Current.SignUpErrorRedirect, http.StatusSeeOther)
+		}
 		return
 	}
-	Respond(w, r, http.StatusCreated, acct)
+
+	if config.Current.SignUpSendEmailValidation {
+		u.sendEmail(acct.Email, pw)
+	}
+
+	if isJSON {
+		Respond(w, r, http.StatusCreated, acct)
+	} else {
+		ck := &http.Cookie{
+			Name:  "X-API-KEY",
+			Path:  "/",
+			Value: acct.Users[0].Token,
+		}
+
+		// we set the cookie so they will have their authentication token on the next request.
+		http.SetCookie(w, ck)
+
+		http.Redirect(w, r, config.Current.SignUpSuccessRedirect, http.StatusSeeOther)
+	}
+}
+
+func (u User) sendEmail(email, pass string) {
+	//TODO: implement this
+	//queue.Enqueue(queue.TaskEmail, queue.SendEmailParameter{})
 }
 
 func (u User) login(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +143,11 @@ func (u User) signin(w http.ResponseWriter, r *http.Request) {
 
 	user, err := db.Users.GetUserByEmail(data.Email)
 	if err != nil {
-		Respond(w, r, http.StatusInternalServerError, err)
+		if isJSON {
+			Respond(w, r, http.StatusInternalServerError, err)
+		} else {
+			http.Redirect(w, r, config.Current.SignInErrorRedirect, http.StatusSeeOther)
+		}
 		return
 	}
 
@@ -106,7 +156,20 @@ func (u User) signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	Respond(w, r, http.StatusOK, user)
+	if isJSON {
+		Respond(w, r, http.StatusOK, user)
+	} else {
+		ck := &http.Cookie{
+			Name:  "X-API-KEY",
+			Path:  "/",
+			Value: user.Token,
+		}
+
+		// we set the cookie so they will have their authentication token on the next request.
+		http.SetCookie(w, ck)
+
+		http.Redirect(w, r, config.Current.SignInSuccessRedirect, http.StatusSeeOther)
+	}
 }
 
 func (u User) profile(w http.ResponseWriter, r *http.Request) {

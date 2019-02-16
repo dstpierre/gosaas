@@ -15,6 +15,7 @@ type Account struct {
 	SubscribedOn   time.Time `bson:"subscribed" json:"subscribed"`
 	Seats          int       `bson:"seats" json:"seats"`
 	TrialInfo      Trial     `bson:"trial" json:"trial"`
+	IsActive       bool      `bson:"active" json:"active"`
 
 	Users []User `bson:"users" json:"users"`
 }

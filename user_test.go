@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
 	"testing"
 
 	"github.com/dstpierre/gosaas/data"
@@ -19,7 +20,16 @@ import (
 
 func logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
+		ctx := r.Context()
+
+		dr, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			log.Println("unable to dump request", err)
+		} else {
+			ctx = context.WithValue(ctx, ContextRequestDump, dr)
+		}
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -55,6 +65,8 @@ func authenticator(next http.Handler) http.Handler {
 }
 
 func executeRequest(req *http.Request) (*httptest.ResponseRecorder, *Server) {
+	req.Header.Set("Content-Type", "application/json")
+
 	db := &data.DB{}
 	if err := db.Open("unit", "test"); err != nil {
 		log.Fatal("error while creating mem data ", err)
@@ -119,6 +131,39 @@ func Test_Users_SignUp(t *testing.T) {
 		t.Fatal(err)
 	} else if acct.Email != data.Email {
 		t.Errorf("database email is %s and was expecting %s", acct.Email, data.Email)
+	}
+}
+
+func Test_Users_SignIn(t *testing.T) {
+	t.Parallel()
+
+	var data = new(struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	})
+	data.Email = "test@domain.com"
+	data.Password = "unit-test"
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest("POST", "/users/login", bytes.NewReader(b))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec, _ := executeRequest(req)
+	if status := rec.Code; status != http.StatusOK {
+		t.Errorf("returns status %v was expecting %v", status, http.StatusOK)
+	}
+
+	var user model.User
+	if err := ParseBody(ioutil.NopCloser(bytes.NewReader(rec.Body.Bytes())), &user); err != nil {
+		t.Errorf("error while parsing returning JSON: %v", err)
+	} else if user.Email != "test@domain.com" {
+		t.Errorf("email was %s was expecting test@domain.com", user.Email)
 	}
 }
 

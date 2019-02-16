@@ -38,9 +38,11 @@ func Authenticator(next http.Handler) http.Handler {
 
 		key, pat, err := extractKeyFromRequest(r)
 		// if there's no authentication or an error
-		if len(key) == 0 || err != nil {
-			http.Redirect(w, r, "/users/login", http.StatusSeeOther)
-			return
+		if mr > model.RolePublic {
+			if len(key) == 0 || err != nil {
+				http.Redirect(w, r, "/users/login", http.StatusSeeOther)
+				return
+			}
 		}
 
 		ca := &cache.Auth{}
