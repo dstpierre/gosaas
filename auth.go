@@ -68,7 +68,8 @@ func Authenticator(next http.Handler) http.Handler {
 			id, t := model.ParseToken(key)
 			acct, usr, err := db.Users.Auth(model.StringToKey(id), t, pat)
 			if err != nil {
-				http.Error(w, "invalid token key", http.StatusUnauthorized)
+				er := fmt.Sprintf("invalid token key: %v", err)
+				http.Error(w, er, http.StatusUnauthorized)
 				return
 			}
 

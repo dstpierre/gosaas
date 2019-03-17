@@ -20,11 +20,12 @@ func (u *Users) SignUp(email, password string) (*model.Account, error) {
 
 	acct := model.Account{ID: accountID, Email: email}
 	acct.Users = append(acct.Users, model.User{
-		ID:       bson.NewObjectId(),
-		Email:    email,
-		Password: password,
-		Token:    model.NewToken(accountID),
-		Role:     model.RoleAdmin,
+		ID:        bson.NewObjectId(),
+		AccountID: accountID,
+		Email:     email,
+		Password:  password,
+		Token:     model.NewToken(accountID),
+		Role:      model.RoleAdmin,
 	})
 	if err := u.DB.C("users").Insert(acct); err != nil {
 		return nil, err
@@ -69,7 +70,7 @@ func (u *Users) Auth(accountID model.Key, token string, pat bool) (*model.Accoun
 				}
 			}
 		} else {
-			if usr.Token == token {
+			if usr.Token == fmt.Sprintf("%s|%s", accountID.Hex(), token) {
 				user = usr
 				break
 			}

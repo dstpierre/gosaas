@@ -47,7 +47,8 @@ func (u User) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u User) signup(w http.ResponseWriter, r *http.Request) {
-
+	ctx := r.Context()
+	ServePage(w, r, config.Current.SignUpTemplate, CreateViewData(ctx, nil, nil))
 }
 
 func (u User) create(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +72,7 @@ func (u User) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pw := randStringRunes(7)
+	fmt.Println("TODO: remove this, temporary password", pw)
 	b, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
 	if err != nil {
 		if isJSON {
@@ -118,7 +120,7 @@ func (u User) sendEmail(email, pass string) {
 
 func (u User) login(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	ServePage(w, r, "login.html", CreateViewData(ctx, nil, nil))
+	ServePage(w, r, config.Current.SignInTemplate, CreateViewData(ctx, nil, nil))
 }
 func (u User) signin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
