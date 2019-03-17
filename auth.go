@@ -16,8 +16,8 @@ import (
 
 // Auth represents an authenticated user.
 type Auth struct {
-	AccountID model.Key
-	UserID    model.Key
+	AccountID int64
+	UserID    int64
 	Email     string
 	Role      model.Roles
 }

@@ -169,7 +169,7 @@ func (b Billing) changeQuantity(stripeID, subID string, qty int) error {
 	return err
 }
 
-func (b Billing) userRoleChanged(db data.DB, accountID model.Key, oldRole, newRole model.Roles) (paid bool, err error) {
+func (b Billing) userRoleChanged(db data.DB, accountID int64, oldRole, newRole model.Roles) (paid bool, err error) {
 	acct, err := db.Users.GetDetail(accountID)
 	if err != nil {
 		return false, err

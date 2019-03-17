@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -10,13 +11,8 @@ import (
 )
 
 // NewToken returns a token combining an id with a unique identifier.
-func NewToken(id Key) string {
-	uid, err := uuid.NewV4()
-	if err != nil {
-		return ""
-	}
-
-	return fmt.Sprintf("%s|%s", KeyToString(id), uid.String())
+func NewToken(id int64) string {
+	return fmt.Sprintf("%d|%s", id, uuid.NewV4().String())
 }
 
 // ParseToken returns the id and uuid for a given token.
@@ -40,4 +36,13 @@ func NewFriendlyID() string {
 			n.Minute(),
 			n.Second()))
 	return fmt.Sprintf("%x", i)
+}
+
+func StringToKey(s string) int64 {
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		log.Printf("error converting %s to int64\n", s)
+		return -1
+	}
+	return i
 }

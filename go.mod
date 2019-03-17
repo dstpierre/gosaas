@@ -5,6 +5,7 @@ require (
 	github.com/globalsign/mgo v0.0.0-20181015135952-eeefdecb41b8
 	github.com/go-redis/redis v6.14.2+incompatible
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/lib/pq v1.0.0
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

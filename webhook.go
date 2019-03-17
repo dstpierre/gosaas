@@ -59,11 +59,6 @@ func post(url string, data interface{}, result interface{}, headers map[string]s
 
 // SendWebhook posts data to all subscribers of an event.
 func SendWebhook(wh data.WebhookServices, event string, data interface{}) {
-	defer func() {
-		fmt.Println("closing webhooks connection")
-		wh.Close()
-	}()
-
 	headers := make(map[string]string)
 	headers["X-Webhook-Event"] = event
 

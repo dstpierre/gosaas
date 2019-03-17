@@ -6,11 +6,13 @@
 
 In September 2018 I published a book named [Build a SaaS app in Go](https://buildsaasappingo.com/). This project is the transformation of what the book teaches into a library that can be used to quickly build a web app / SaaS and focusing on your core product instead of common SaaS components.
 
-*This is under development and API might change.*
+*This is under development and API will change.*
+
+*Migrating to PostgreSQL at the moment.*
 
 ### Usage quick example
 
-You can create your main package and copy the `docker-compose.yml`. You'll need Redis and MongoDB for the library to work.
+You can create your main package and copy the `docker-compose.yml`. You'll need Redis and PostgreSQL for the library to work.
 
 ```go
 package main
@@ -79,7 +81,7 @@ The following aspects are covered by this library:
 * Routing logic in your own code.
 * Middlewares: logging, authentication, rate limiting and throttling.
 * User authentication and authorization using multiple ways to pass a token and a simple role based authorization.
-* Database agnostic data layer. Currently handling MongoDB and an in-memory provider. [in dev]
+* Database agnostic data layer. Currently handling PostgreSQL.
 * User management, billing (per account or per user) and webhooks management. [in dev]
 * Simple queue (using Redis) and Pub/Sub for queuing tasks.
 * Cron-like scheduling for recurring tasks.
@@ -174,7 +176,11 @@ func (t *Task) detail(w http.ResponseWriter, r *http.Request) {
 
 ### Database
 
-The `data` package is provider agnostic. For now, only a MongoDB and an in-memory implementation are available (Postgres will be implemented next). There's a `data.DB` type that abstract away the database proprietary code.
+Before 2019/03/17 there's were a MongoDB implementation which has been removed 
+to only support database/sql. PostgreSQL is currently the only supported driver.
+
+The `data` package exposes a `DB` type that have a `Connection` field pointing 
+to the database.
 
 Before calling `http.ListenAndServe` you have to initialize the `DB` field of the `Server` type:
 
@@ -188,13 +194,15 @@ if err := db.Open(*dn, *ds); err != nil {
 mux.DB = db
 ```
 
-Where `*dn` and `*ds` are flags containing "mongo" and "localhost" respectively which are the driver name and the datasource connection string.
+Where `*dn` and `*ds` are flags containing "postgres" and 
+"user=postgres password=postgres dbname=postgres sslmode=disable" for example,
+respectively which are the driver name and the datasource connection string.
 
 This is an example of what your `main` function could be:
 
 ```go
 func main() {
-	dn := flag.String("driver", "mongo", "name of the database driver to use, mongo or mem are supported")
+	dn := flag.String("driver", "postgres", "name of the database driver to use, only postgres is supported at the moment")
 	ds := flag.String("datasource", "", "database connection string")
 	q := flag.Bool("queue", false, "set as queue pub/sub subscriber and task executor")
 	e := flag.String("env", "dev", "set the current environment [dev|staging|prod]")

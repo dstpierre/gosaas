@@ -22,7 +22,7 @@ type Configuration struct {
 
 	StripeKey string `json:"stripeKey"`
 
-	SignUpTemplate            string `json:"signupTemplate`
+	SignUpTemplate            string `json:"signupTemplate"`
 	SignUpSendEmailValidation bool   `json:"sendEmailValidation"`
 	SignUpSuccessRedirect     string `json:"signupSuccessRedirect"`
 	SignUpErrorRedirect       string `json:"signupErrorRedirect"`

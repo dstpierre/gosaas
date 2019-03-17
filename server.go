@@ -103,16 +103,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if next.WithDB {
-		if s.DB.CopySession {
-			s.DB.Users.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
-			s.DB.Webhooks.RefreshSession(s.DB.Connection, s.DB.DatabaseName)
-
-			defer func() {
-				s.DB.Users.Close()
-				s.DB.Webhooks.Close()
-			}()
-		}
-
 		ctx = context.WithValue(ctx, ContextDatabase, s.DB)
 	}
 

@@ -2,7 +2,6 @@ package gosaas
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -21,12 +20,7 @@ import (
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), ContextRequestStart, time.Now())
-		uid, err := uuid.NewV4()
-		if err != nil {
-			ctx = context.WithValue(ctx, ContextRequestID, fmt.Sprintf("%d", time.Now().UnixNano()))
-		} else {
-			ctx = context.WithValue(ctx, ContextRequestID, uid.String())
-		}
+		ctx = context.WithValue(ctx, ContextRequestID, uuid.NewV4().String())
 
 		dr, err := httputil.DumpRequest(r, true)
 		if err != nil {
