@@ -58,7 +58,7 @@ jobs: # basic units of work in a run
       - run:
           name: Initialize the database
           command: |
-            for f in /gosaas/migrations/*.sql;
+            for f in /tmp/gosaas/migrations/*.sql;
             do
               psql -d $TEST_DATABASE_URL -f $f
             done
