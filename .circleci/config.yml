@@ -4,6 +4,8 @@ jobs: # basic units of work in a run
     docker: # run the steps with Docker
       # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
       - image: circleci/golang:1.11
+        environment:
+          TEST_DATABASE_URL: postgresql://postgres@localhost/test
       - image: circleci/redis
       - image: circleci/postgres:9.6.2-alpine
         environment:
@@ -54,15 +56,11 @@ jobs: # basic units of work in a run
             echo Failed waiting for Postgres && exit 1
       
       - run:
-          name: Create database
-          command: psql --username=postgres -c "CREATE DATABASE test;"
-      
-      - run:
           name: Initialize the database
           command: |
             for f in /gosaas/migrations/*.sql;
             do
-              psql --username=postgres -d test -f $f
+              psql -d $TEST_DATABASE_URL -f $f
             done
 
 
