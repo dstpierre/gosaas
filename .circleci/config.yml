@@ -11,7 +11,7 @@ jobs: # basic units of work in a run
           POSTGRES_DB: test
           POSTGRES_PASSWORD: ""
 
-    working_directory: /gosaas
+    working_directory: /go/src/github.com/dstpierre/gosaas
 
     environment: # environment variables for the build itself
       - TEST_RESULTS: /tmp/test-results # path to where test results will be saved
