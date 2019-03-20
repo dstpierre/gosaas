@@ -33,8 +33,8 @@ func TestUsersAuth(t *testing.T) {
 	users := &Users{DB: db}
 	acct := createAccountAndUser(t, users, "auth@unittest.com", "1234")
 
-	token := acct.Users[0].Token
-	_, u, err := users.Auth(acct.ID, token, false)
+	id, tok := model.ParseToken(acct.Users[0].Token)
+	_, u, err := users.Auth(id, tok, false)
 	if err != nil {
 		t.Error(err)
 	} else if u.ID != acct.Users[0].ID {

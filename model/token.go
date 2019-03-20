@@ -16,12 +16,17 @@ func NewToken(id int64) string {
 }
 
 // ParseToken returns the id and uuid for a given token.
-func ParseToken(token string) (string, string) {
+func ParseToken(token string) (int64, string) {
 	pairs := strings.Split(token, "|")
 	if len(pairs) != 2 {
-		return "", ""
+		return -1, ""
 	}
-	return pairs[0], pairs[1]
+
+	id, err := strconv.ParseInt(pairs[0], 10, 64)
+	if err != nil {
+		return -1, ""
+	}
+	return id, pairs[1]
 }
 
 // NewFriendlyID returns a ~somewhat unique friendly id.
