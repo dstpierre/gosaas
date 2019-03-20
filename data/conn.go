@@ -18,8 +18,8 @@ func (db *DB) Open(driverName, dataSource string) error {
 		return err
 	}
 
-	db.Users = &postgres.Users{}
-	db.Webhooks = &postgres.Webhooks{}
+	db.Users = &postgres.Users{DB: conn}
+	db.Webhooks = &postgres.Webhooks{DB: conn}
 
 	db.Connection = conn
 
