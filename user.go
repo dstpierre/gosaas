@@ -17,10 +17,11 @@ type User struct{}
 func newUser() *Route {
 	var u interface{} = User{}
 	return &Route{
-		Logger:      true,
-		MinimumRole: model.RolePublic,
-		WithDB:      true,
-		Handler:     u.(http.Handler),
+		AllowCrossOrigin: true,
+		Logger:           true,
+		MinimumRole:      model.RolePublic,
+		WithDB:           true,
+		Handler:          u.(http.Handler),
 	}
 }
 
@@ -57,7 +58,8 @@ func (u User) create(w http.ResponseWriter, r *http.Request) {
 	isJSON := ctx.Value(ContextContentIsJSON).(bool)
 
 	var data = new(struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	})
 
 	if isJSON {
@@ -71,9 +73,12 @@ func (u User) create(w http.ResponseWriter, r *http.Request) {
 		data.Email = r.Form.Get("email")
 	}
 
-	pw := randStringRunes(7)
-	fmt.Println("TODO: remove this, temporary password", pw)
-	b, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+	if len(data.Password) == 0 {
+		data.Password = randStringRunes(7)
+		fmt.Println("TODO: remove this, temporary password", data.Password)
+	}
+
+	b, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
 	if err != nil {
 		if isJSON {
 			Respond(w, r, http.StatusInternalServerError, err)
@@ -94,7 +99,7 @@ func (u User) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if config.Current.SignUpSendEmailValidation {
-		u.sendEmail(acct.Email, pw)
+		u.sendEmail(acct.Email, data.Password)
 	}
 
 	if isJSON {
@@ -131,6 +136,8 @@ func (u User) signin(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	})
+
+	fmt.Println("isJson", isJSON)
 
 	if isJSON {
 		if err := ParseBody(r.Body, &data); err != nil {

@@ -1,3 +1,1 @@
-// +build !mgo
-
 package gosaas

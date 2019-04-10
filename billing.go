@@ -53,9 +53,10 @@ type BillingCardData struct {
 func newBilling() *Route {
 	var b interface{} = Billing{}
 	return &Route{
-		Logger:      true,
-		MinimumRole: model.RoleFree,
-		Handler:     b.(http.Handler),
+		AllowCrossOrigin: true,
+		Logger:           true,
+		MinimumRole:      model.RoleFree,
+		Handler:          b.(http.Handler),
 	}
 }
 

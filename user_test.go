@@ -1,5 +1,3 @@
-// +build mem
-
 package gosaas
 
 import (

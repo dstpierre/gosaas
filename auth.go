@@ -33,10 +33,13 @@ type Auth struct {
 // For routes with MinimumRole set as model.RolePublic there's no authentication performed.
 func Authenticator(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("AUTHENTICATION MIDDLEWARE")
+
 		ctx := r.Context()
 		mr := ctx.Value(ContextMinimumRole).(model.Roles)
 
 		key, pat, err := extractKeyFromRequest(r)
+		fmt.Println("AUTH KEY", key)
 		// if there's no authentication or an error
 		if mr > model.RolePublic {
 			if len(key) == 0 || err != nil {
@@ -79,7 +82,7 @@ func Authenticator(next http.Handler) http.Handler {
 			a.Role = usr.Role
 
 			// save it to cache
-			ca.Set(key, a, 30*time.Second)
+			ca.Set(key, a, 30*time.Minute)
 
 			ctx = context.WithValue(ctx, ContextAuth, a)
 		}

@@ -2,6 +2,7 @@ package gosaas
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -19,6 +20,8 @@ import (
 // the request in a development environment using this tool https://github.com/dstpierre/httpreplay.
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("LOGGER MIDDLEWARE")
+
 		ctx := context.WithValue(r.Context(), ContextRequestStart, time.Now())
 		ctx = context.WithValue(ctx, ContextRequestID, uuid.NewV4().String())
 

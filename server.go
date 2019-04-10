@@ -77,6 +77,8 @@ func NewServer(routes map[string]*Route) *Server {
 // 	mux := gosaas.NewServer(routes)
 // 	mux.StaticDirectory = "/files/"
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("request:", r.URL.Path)
+
 	if strings.HasPrefix(r.URL.Path, s.StaticDirectory) {
 		http.ServeFile(w, r, r.URL.Path[1:])
 		return
@@ -97,11 +99,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		next = NewError(fmt.Errorf("path not found"), http.StatusNotFound)
 	}
 
-	// are we allowing cross-origin requests for this route
-	if next.AllowCrossOrigin {
-		s.Cors(next.Handler)
-	}
-
 	if next.WithDB {
 		ctx = context.WithValue(ctx, ContextDatabase, s.DB)
 	}
@@ -118,6 +115,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if next.EnforceRateLimit {
 		next.Handler = s.RateLimiter(next.Handler)
 		next.Handler = s.Throttler(next.Handler)
+	}
+
+	// are we allowing cross-origin requests for this route
+	if next.AllowCrossOrigin {
+		fmt.Println("cors request")
+		next.Handler = s.Cors(next.Handler)
 	}
 
 	next.Handler.ServeHTTP(w, r.WithContext(ctx))

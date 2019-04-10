@@ -50,7 +50,7 @@ const (
 
 // User represents a user.
 type User struct {
-	ID           int64         `bson:"_id" json:"id"`
+	ID           int64         `json:"id"`
 	AccountID    int64         ` json:"accountId"`
 	Email        string        `json:"email"`
 	Password     string        ` json:"-"`

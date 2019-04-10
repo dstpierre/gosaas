@@ -139,16 +139,25 @@ func Translatef(lng, key string, a ...interface{}) string {
 }
 
 // BUG(dom): This needs more thinking...
-func ExtractPageAndFilter(r *http.Request) (page int, filter string) {
-	p := r.URL.Query().Get("p")
+func ExtractLimitAndOffset(r *http.Request) (limit int, offset int) {
+	limit = 50
+	offset = 0
+
+	p := r.URL.Query().Get("limit")
 	if len(p) > 0 {
 		i, err := strconv.Atoi(p)
 		if err == nil {
-			page = i
+			limit = i
 		}
 	}
 
-	filter = r.URL.Query().Get("filter")
+	p = r.URL.Query().Get("offset")
+	if len(p) > 0 {
+		i, err := strconv.Atoi(p)
+		if err == nil {
+			offset = i
+		}
+	}
 
 	return
 }

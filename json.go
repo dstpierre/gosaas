@@ -3,6 +3,7 @@ package gosaas
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -31,6 +32,8 @@ func Respond(w http.ResponseWriter, r *http.Request, status int, data interface{
 		tmp.Status = "error"
 		tmp.Error = e.Error()
 		data = tmp
+
+		log.Println("error: ", e.Error())
 	}
 
 	js, err := json.Marshal(data)
