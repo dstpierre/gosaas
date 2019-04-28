@@ -30,16 +30,19 @@ func ParseToken(token string) (int64, string) {
 }
 
 // NewFriendlyID returns a ~somewhat unique friendly id.
-func NewFriendlyID() string {
+func NewFriendlyID(id int64, key string) string {
 	n := time.Now()
 	i, _ := strconv.Atoi(
-		fmt.Sprintf("%d%d%d%d%d%d",
+		fmt.Sprintf("%d%d%d%d%d%d%d%d%d",
+			id,
+			len(key),
 			n.Year()-2000,
 			int(n.Month()),
 			n.Day(),
 			n.Hour(),
 			n.Minute(),
-			n.Second()))
+			n.Second(),
+			n.Nanosecond()))
 	return fmt.Sprintf("%x", i)
 }
 
