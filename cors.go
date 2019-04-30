@@ -9,8 +9,6 @@ import (
 // Cors enables calls via remote origin to handle external JavaScript calls mainly.
 func Cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("CORS MIDDLEWARE")
-
 		headers := w.Header()
 		origin := r.Header.Get("Origin")
 
@@ -33,10 +31,7 @@ func Cors(next http.Handler) http.Handler {
 
 		headers.Set("Access-Control-Allow-Headers", r.Header.Get("Access-Control-Request-Headers"))
 
-		fmt.Println("cors method", r.Method)
-
 		if r.Method == "OPTIONS" {
-			fmt.Println("replying to CORS request")
 			w.WriteHeader(http.StatusOK)
 			return
 		}

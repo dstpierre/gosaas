@@ -77,8 +77,6 @@ func NewServer(routes map[string]*Route) *Server {
 // 	mux := gosaas.NewServer(routes)
 // 	mux.StaticDirectory = "/files/"
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("request:", r.URL.Path)
-
 	if strings.HasPrefix(r.URL.Path, s.StaticDirectory) {
 		http.ServeFile(w, r, r.URL.Path[1:])
 		return
@@ -119,7 +117,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// are we allowing cross-origin requests for this route
 	if next.AllowCrossOrigin {
-		fmt.Println("cors request")
 		next.Handler = s.Cors(next.Handler)
 	}
 
