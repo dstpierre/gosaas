@@ -1,7 +1,6 @@
 package gosaas
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 )
