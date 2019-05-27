@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"time"
 
 	"github.com/dstpierre/gosaas/cache"
@@ -22,12 +21,15 @@ func Logger(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), ContextRequestStart, time.Now())
 		ctx = context.WithValue(ctx, ContextRequestID, uuid.NewV4().String())
 
-		dr, err := httputil.DumpRequest(r, true)
-		if err != nil {
-			log.Println("unable to dump request", err)
-		} else {
-			ctx = context.WithValue(ctx, ContextRequestDump, dr)
-		}
+		//TODO: this causes issues
+		/*
+			dr, err := httputil.DumpRequest(r, true)
+			if err != nil {
+				log.Println("unable to dump request", err)
+			} else {
+				ctx = context.WithValue(ctx, ContextRequestDump, dr)
+			}
+		*/
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -47,22 +49,26 @@ func logRequest(r *http.Request, statusCode int) {
 		reqID = "failed"
 	}
 
-	v = ctx.Value(ContextRequestDump)
-	dr, ok := v.([]byte)
-	if !ok {
-		log.Println(path, "unable to retrieve the dump request data")
-	} else {
-		if statusCode >= http.StatusBadRequest {
-			// we don't want to log 404 not found
-			if statusCode != http.StatusNotFound {
-				if dr != nil {
-					if err := cache.LogWebRequest(reqID, dr); err != nil {
-						log.Println("unable to save failed request", err)
+	//TODO: un-comment when the dump request above
+	// is fixed.
+	/*
+		v = ctx.Value(ContextRequestDump)
+		dr, ok := v.([]byte)
+		if !ok {
+			log.Println(path, "unable to retrieve the dump request data")
+		} else {
+			if statusCode >= http.StatusBadRequest {
+				// we don't want to log 404 not found
+				if statusCode != http.StatusNotFound {
+					if dr != nil {
+						if err := cache.LogWebRequest(reqID, dr); err != nil {
+							log.Println("unable to save failed request", err)
+						}
 					}
 				}
 			}
 		}
-	}
+	*/
 
 	v = ctx.Value(ContextRequestStart)
 	if v == nil {
