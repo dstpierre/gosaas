@@ -63,7 +63,11 @@ func Authenticator(next http.Handler) http.Handler {
 				return
 			}
 
-			db := ctx.Value(ContextDatabase).(*data.DB)
+			db, ok := ctx.Value(ContextDatabase).(*data.DB)
+			if !ok {
+				http.Error(w, "database not available", http.StatusUnauthorized)
+				return
+			}
 
 			id, t := model.ParseToken(key)
 			acct, usr, err := db.Users.Auth(id, t, pat)
