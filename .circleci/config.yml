@@ -7,7 +7,7 @@ jobs: # basic units of work in a run
         environment:
           TEST_DATABASE_URL: postgresql://postgres@localhost/test
       - image: circleci/redis
-      - image: circleci/postgres:9.6.2-alpine
+      - image: circleci/postgres:10-alpine
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: test
