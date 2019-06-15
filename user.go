@@ -137,8 +137,6 @@ func (u User) signin(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	})
 
-	fmt.Println("isJson", isJSON)
-
 	if isJSON {
 		if err := ParseBody(r.Body, &data); err != nil {
 			Respond(w, r, http.StatusBadRequest, err)

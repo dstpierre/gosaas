@@ -12,7 +12,6 @@ import (
 	"net/http/httputil"
 	"testing"
 
-	"github.com/dstpierre/gosaas/data"
 	"github.com/dstpierre/gosaas/model"
 )
 
@@ -65,11 +64,6 @@ func authenticator(next http.Handler) http.Handler {
 func executeRequest(req *http.Request) (*httptest.ResponseRecorder, *Server) {
 	req.Header.Set("Content-Type", "application/json")
 
-	db := &data.DB{}
-	if err := db.Open("unit", "test"); err != nil {
-		log.Fatal("error while creating mem data ", err)
-	}
-
 	routes := make(map[string]*Route)
 	// we use the built-in routes for tests
 	routes["users"] = newUser()
@@ -80,6 +74,9 @@ func executeRequest(req *http.Request) (*httptest.ResponseRecorder, *Server) {
 		DB:              db,
 		Logger:          logger,
 		Authenticator:   authenticator,
+		Throttler:       Throttler,
+		RateLimiter:     RateLimiter,
+		Cors:            Cors,
 		StaticDirectory: "/public/",
 		Routes:          routes,
 	}
@@ -97,9 +94,11 @@ func Test_Users_SignUp(t *testing.T) {
 	t.Parallel()
 
 	var data = new(struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	})
 	data.Email = "new@user.com"
+	data.Password = "unit-test"
 
 	b, err := json.Marshal(data)
 	if err != nil {
@@ -135,11 +134,20 @@ func Test_Users_SignUp(t *testing.T) {
 func Test_Users_SignIn(t *testing.T) {
 	t.Parallel()
 
+	fmt.Println("testing signin")
+
+	email, pw := "test@domain.com", "$2a$10$i32u9lXBMeDGTwe2vrBRde8E8QQ5UW7ndGzWa9n.M/O14/CH9HqlG"
+
+	acct, err := db.Users.SignUp(email, pw)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	var data = new(struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	})
-	data.Email = "test@domain.com"
+	data.Email = email
 	data.Password = "unit-test"
 
 	b, err := json.Marshal(data)
@@ -160,13 +168,13 @@ func Test_Users_SignIn(t *testing.T) {
 	var user model.User
 	if err := ParseBody(ioutil.NopCloser(bytes.NewReader(rec.Body.Bytes())), &user); err != nil {
 		t.Errorf("error while parsing returning JSON: %v", err)
-	} else if user.Email != "test@domain.com" {
+	} else if user.Email != acct.Email {
 		t.Errorf("email was %s was expecting test@domain.com", user.Email)
 	}
 }
 
 func Test_Users_Profile(t *testing.T) {
-	t.Parallel()
+	t.Skip()
 
 	req, err := http.NewRequest("GET", "/users/profile?key=unit-test-token", nil)
 	if err != nil {

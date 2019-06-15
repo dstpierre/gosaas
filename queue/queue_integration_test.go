@@ -10,6 +10,8 @@ import (
 )
 
 func TestQueue_Setup_Queue(t *testing.T) {
+	t.Skip()
+
 	fmt.Println("opening redis connection...")
 
 	c := redis.NewClient(&redis.Options{
@@ -23,7 +25,8 @@ func TestQueue_Setup_Queue(t *testing.T) {
 		t.Fatal("unable to connect to redis", err)
 	}
 
-	New(c, true)
+	executors := make(map[TaskID]TaskExecutor)
+	New(c, true, executors)
 	go SetAsSubscriber()
 
 	time.AfterFunc(time.Second, func() {
@@ -55,6 +58,8 @@ func TestQueue_ParseTask(t *testing.T) {
 }
 
 func TestQueue_SetupCron(t *testing.T) {
+	t.Skip()
+
 	scheduler = cron.New()
 	defer scheduler.Stop()
 
