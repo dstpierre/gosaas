@@ -121,6 +121,16 @@ func (u *Users) GetByStripe(stripeID string) (*model.Account, error) {
 	return u.GetDetail(accountID)
 }
 
+func (repo *Users) ChangePassword(id, accountID int64, passwd string) error {
+	_, err := repo.DB.Exec(`
+	UPDATE gosaas_users
+	SET password = $3
+	WHERE id = $1
+	AND account_id = $2
+	`, id, accountID, passwd)
+	return err
+}
+
 func (u *Users) SetSeats(id int64, seats int) error {
 	_, err := u.DB.Exec(`
 		UPDATE gosaas_accounts SET

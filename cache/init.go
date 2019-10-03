@@ -45,6 +45,6 @@ func New(queueProcessor, isDev bool, ex map[queue.TaskID]queue.TaskExecutor) {
 	queue.New(rc, isDev, ex)
 
 	if queueProcessor {
-		queue.SetAsSubscriber()
+		go queue.SetAsSubscriber()
 	}
 }

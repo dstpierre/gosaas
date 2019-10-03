@@ -3,6 +3,9 @@ package queue
 import (
 	"fmt"
 	"log"
+
+	"github.com/dstpierre/gosaas/queue/email"
+	"github.com/dstpierre/gosaas/internal/config"
 )
 
 type SendEmailParameter struct {
@@ -14,6 +17,10 @@ type SendEmailParameter struct {
 
 type Email struct {
 	Send func(p SendEmailParameter) error
+}
+
+type Emailer interface {
+	Send(toEmail, toName, fromEmail, fromName, subject, body, replyTo string) error
 }
 
 func (e *Email) Run(qt QueueTask) error {
@@ -37,6 +44,15 @@ func (e *Email) sendEmailDev(p SendEmailParameter) error {
 }
 
 func (e *Email) sendEmailProd(p SendEmailParameter) error {
-	log.Fatal("not implemented")
-	return nil
+	var emailer Emailer
+	if config.Current.EmailProvider == "amazonses" {
+		emailer = &email.AmazonSES{}
+	}
+
+	if emailer == nil {
+		log.Println("cannot find email provider named: %s", config.Current.EmailProvider)		
+		return nil
+	}
+
+	return emailer.Send(p.To, p.To, p.From, p.From, p.Subject, p.Body, "")
 }

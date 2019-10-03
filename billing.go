@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/dstpierre/gosaas/data"
 	"github.com/dstpierre/gosaas/model"
@@ -23,7 +22,9 @@ func SetStripeKey(key string) {
 }
 
 // Billing handles everything related to the billing requests
-type Billing struct{}
+type Billing struct {
+	DB *data.DB
+}
 
 // BillingOverview represents if an account is a paid customer or not
 type BillingOverview struct {
@@ -76,9 +77,7 @@ func (b Billing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if r.Method == http.MethodPost {
-		if head == "start" {
-			b.start(w, r)
-		} else if head == "changeplan" {
+		if head == "changeplan" {
 			b.changePlan(w, r)
 		} else if head == "webhooks" {
 			b.stripe(w, r)
@@ -221,98 +220,87 @@ func (b Billing) userRoleChanged(db data.DB, accountID int64, oldRole, newRole m
 
 // BillingNewCustomer represents data sent to api for creating a new customer
 type BillingNewCustomer struct {
-	Plan     string          `json:"plan"`
-	Card     BillingCardData `json:"card"`
-	Coupon   string          `json:"coupon"`
-	Zip      string          `json:"zip"`
-	IsYearly bool            `json:"yearly"`
+	AccountID   int64
+	Email       string
+	Plan        string
+	StripeToken string
+	Coupon      string
+	IsPerSeat   bool
+	IsYearly    bool
+	TrialDays   int
 }
 
-func (b Billing) start(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	keys := ctx.Value(ContextAuth).(Auth)
-	db := ctx.Value(ContextDatabase).(*data.DB)
-
-	var data BillingNewCustomer
-	if err := ParseBody(r.Body, &data); err != nil {
-		Respond(w, r, http.StatusBadRequest, err)
-		return
-	}
-
-	p := &stripe.CustomerParams{Email: &keys.Email}
-	p.SetSource(&stripe.CardParams{
-		Name:       &data.Card.Name,
-		Number:     &data.Card.Number,
-		ExpMonth:   &data.Card.Month,
-		ExpYear:    &data.Card.Year,
-		CVC:        &data.Card.CVC,
-		AddressZip: &data.Zip,
-	})
+func (b Billing) Start(bc BillingNewCustomer) error {
+	p := &stripe.CustomerParams{Email: stripe.String(bc.Email)}
+	p.SetSource(bc.StripeToken)
 
 	c, err := customer.New(p)
 	if err != nil {
-		Respond(w, r, http.StatusInternalServerError, err)
-		return
+		return fmt.Errorf("unable to create the customer: %v", err)
 	}
 
-	acct, err := db.Users.GetDetail(keys.AccountID)
+	acct, err := b.DB.Users.GetDetail(bc.AccountID)
 	if err != nil {
-		Respond(w, r, http.StatusInternalServerError, err)
-		return
+		return fmt.Errorf("unable to get the account for this account ID: %d -> %v", bc.AccountID, err)
 	}
 
-	seats := 0
-	for _, u := range acct.Users {
-		if u.Role < model.RoleFree {
-			seats++
+	seats := 1
+	if bc.IsPerSeat {
+		seats = 0
+		for _, u := range acct.Users {
+			if u.Role < model.RoleFree {
+				seats++
+			}
 		}
 	}
 
-	plan := data.Plan
-	if data.IsYearly {
+	plan := bc.Plan
+	if bc.IsYearly {
 		plan += "_yearly"
 	}
 
-	// Coupon:   "PRELAUNCH11",
+	// we get the current set of pricing plans
+	currentPlans := data.GetPlans("current")
+	var bp data.BillingPlan
+	for _, p := range currentPlans {
+		if p.Name == plan {
+			bp = p
+			break
+		}
+	}
+
+	if len(bp.ID) == 0 {
+		return fmt.Errorf("unable to find this plan %s in the 'current' pricing se", plan)
+	}
+
 	seatsptr := int64(seats)
 	subp := &stripe.SubscriptionParams{
 		Customer: &c.ID,
-		Plan:     &plan,
+		Plan:     stripe.String(bp.StripeID),
 		Quantity: &seatsptr,
 	}
 
-	if len(data.Coupon) > 0 {
-		subp.Coupon = &data.Coupon
+	if bc.TrialDays > 0 {
+		subp.TrialPeriodDays = stripe.Int64(int64(bc.TrialDays))
+	}
+
+	if len(bc.Coupon) > 0 {
+		subp.Coupon = &bc.Coupon
 	}
 
 	s, err := sub.New(subp)
 	if err != nil {
-		Respond(w, r, http.StatusInternalServerError, err)
-		return
+		return fmt.Errorf("unable to create the subscription: %v", err)
 	}
 
 	acct.TrialInfo.IsTrial = false
-	if err := db.Users.ConvertToPaid(acct.ID, c.ID, s.ID, data.Plan, data.IsYearly, seats); err != nil {
-		Respond(w, r, http.StatusInternalServerError, err)
-		return
+	if err := b.DB.Users.ConvertToPaid(acct.ID, c.ID, s.ID, bc.Plan, bc.IsYearly, seats); err != nil {
+		return fmt.Errorf("unable to convert the account to a paid account: %v", err)
 	}
-
-	ov := BillingOverview{}
-	ov.StripeID = c.ID
-	ov.Plan = data.Plan
-	ov.IsYearly = data.IsYearly
-	ov.Seats = seats
-
-	acct.StripeID = c.ID
-	acct.SubscribedOn = time.Now()
-	acct.SubscriptionID = s.ID
-	acct.Plan = data.Plan
-	acct.IsYearly = data.IsYearly
-	acct.Seats = seats
 
 	//TODO: Trigger a new customer event
 
-	Respond(w, r, http.StatusOK, ov)
+	return nil
 }
 
 func (b Billing) changePlan(w http.ResponseWriter, r *http.Request) {

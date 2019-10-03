@@ -2,8 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
+
+	"github.com/dstpierre/gosaas/data"
 )
 
 // EmailProvider defines possible implementation of email providers.
@@ -21,6 +23,7 @@ type Configuration struct {
 	EmailProvider EmailProvider `json:"emailProvider"`
 
 	StripeKey string `json:"stripeKey"`
+	Plans []data.BillingPlan `json:"plans"`
 
 	SignUpTemplate            string `json:"signupTemplate"`
 	SignUpSendEmailValidation bool   `json:"sendEmailValidation"`
@@ -34,15 +37,17 @@ type Configuration struct {
 // Current holds the current configuration
 var Current Configuration
 
-func init() {
+// LoadFromFile loads the ./gosaas.json file as the default library configuration
+func LoadFromFile() error {
 	b, err := ioutil.ReadFile("./gosaas.json")
-	if err != nil {
-		return
+	if err != nil { 
+		return err
 	}
 
 	if err := json.Unmarshal(b, &Current); err != nil {
-		log.Println("error parsing your gosaas.json config file", err)
+		return fmt.Errorf("error parsing your gosaas.json config file: %v", err)
 	}
+	return nil
 }
 
 // Configure sets the proper values for various important aspects of the library

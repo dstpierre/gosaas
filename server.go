@@ -3,11 +3,32 @@ package gosaas
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/dstpierre/gosaas/data"
+	"github.com/dstpierre/gosaas/internal/config"
 )
+
+func init() {
+	if err := config.LoadFromFile(); err != nil {
+		log.Println(err)
+	}
+
+	if len(config.Current.StripeKey) > 0 {
+		SetStripeKey(config.Current.StripeKey)
+	}
+
+	if len(config.Current.Plans) > 0 {
+		for _, p := range config.Current.Plans {
+			if p.Params == nil {
+				p.Params = make(map[string]interface{})
+			}
+			data.AddPlan(p)
+		}
+	}
+}
 
 // Server is the starting point of the backend.
 //
@@ -77,6 +98,8 @@ func NewServer(routes map[string]*Route) *Server {
 // 	mux := gosaas.NewServer(routes)
 // 	mux.StaticDirectory = "/files/"
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	if strings.HasPrefix(r.URL.Path, s.StaticDirectory) {
 		http.ServeFile(w, r, r.URL.Path[1:])
 		return
@@ -93,6 +116,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	head, r.URL.Path = ShiftPath(r.URL.Path)
 	if r, ok := s.Routes[head]; ok {
 		next = r
+	} else if catchall, ok := s.Routes["__catchall__"]; ok {
+		next = catchall
 	} else {
 		next = NewError(fmt.Errorf("path not found"), http.StatusNotFound)
 	}

@@ -2,6 +2,9 @@ package data
 
 import (
 	"database/sql"
+	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/dstpierre/gosaas/model"
 )
@@ -25,6 +28,7 @@ type DB struct {
 // UserServices is an interface that contians all functions related to account, user and billing.
 type UserServices interface {
 	SignUp(email, password string) (*model.Account, error)
+	ChangePassword(id, accountID int64, passwd string) error
 	AddToken(accountID, userID int64, name string) (*model.AccessToken, error)
 	RemoveToken(accountID, userID, tokenID int64) error
 	Auth(accountID int64, token string, pat bool) (*model.Account, *model.User, error)
@@ -48,4 +52,20 @@ type WebhookServices interface {
 	List(accountID int64) ([]model.Webhook, error)
 	Delete(accountID int64, event, url string) error
 	AllSubscriptions(event string) ([]model.Webhook, error)
+}
+
+// NewID returns a per second unique string based on account and user ids.
+func NewID(accountID, userID int64) string {
+	n := time.Now()
+	i, _ := strconv.Atoi(
+		fmt.Sprintf("%d%d%d%d%d%d%d%d",
+			accountID,
+			userID,
+			n.Year()-2000,
+			int(n.Month()),
+			n.Day(),
+			n.Hour(),
+			n.Minute(),
+			n.Second()))
+	return fmt.Sprintf("%x", i)
 }

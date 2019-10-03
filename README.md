@@ -306,9 +306,9 @@ func (t Type) list(w http.ResponseWriter, r *http.Request) {
 
 ## More documentation
 
-I'm currently building the documentation using the [repo's Wiki](https://github.com/dstpierre/gosaas/wiki).
+You can find a more detailed documentation here: [https://dominicstpierre.com/gosaas/](https://dominicstpierre.com/gosaas/)
 
-Please ask any questions here or ping me on [Twitter @dominicstpierre](https://twitter.com/dominicstpierre).
+Please ask any questions here or on [Twitter @dominicstpierre](https://twitter.com/dominicstpierre).
 
 ## Status and contributing
 
