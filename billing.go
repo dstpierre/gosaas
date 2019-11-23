@@ -28,6 +28,7 @@ type Billing struct {
 
 // BillingOverview represents if an account is a paid customer or not
 type BillingOverview struct {
+	Account        *model.Account    `json:"account"`
 	StripeID       string            `json:"stripeId"`
 	Plan           string            `json:"plan"`
 	IsYearly       bool              `json:"isYearly"`
@@ -37,6 +38,7 @@ type BillingOverview struct {
 	CurrentPlan    *data.BillingPlan `json:"currentPlan"`
 	Seats          int               `json:"seats"`
 	Logins         []model.User      `json:"logins"`
+	NextInvoice    *stripe.Invoice   `json:"nextInvoice"`
 }
 
 // BillingCardData represents a Stripe credit card
@@ -65,9 +67,7 @@ func (b Billing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var head string
 	head, r.URL.Path = ShiftPath(r.URL.Path)
 	if r.Method == http.MethodGet {
-		if head == "overview" {
-			b.overview(w, r)
-		} else if head == "invoices" {
+		if head == "invoices" {
 			head, r.URL.Path = ShiftPath(r.URL.Path)
 			if head == "" {
 				b.invoices(w, r)
@@ -89,21 +89,17 @@ func (b Billing) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	keys := ctx.Value(ContextAuth).(Auth)
-	db := ctx.Value(ContextDatabase).(*data.DB)
-
+func (b Billing) Overview(accountID int64) (*BillingOverview, error) {
 	// this struct will be returned should we be a paid customer or not
-	ov := BillingOverview{}
+	ov := &BillingOverview{}
 
 	// Get the current account
-	account, err := db.Users.GetDetail(keys.AccountID)
+	account, err := b.DB.Users.GetDetail(accountID)
 	if err != nil {
-		Respond(w, r, http.StatusNotFound, err)
-		return
+		return nil, fmt.Errorf("unable to find this account: %v", err)
 	}
 
+	ov.Account = account
 	ov.Logins = account.Users
 
 	// get all logins for user roles
@@ -124,15 +120,15 @@ func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		Respond(w, r, http.StatusOK, ov)
-		return
+		ov.Cards = make([]BillingCardData, 0)
+
+		return ov, nil
 	}
 
 	// getting stripe customer
 	cus, err := customer.Get(account.StripeID, nil)
 	if err != nil {
-		Respond(w, r, http.StatusBadRequest, err)
-		return
+		return nil, fmt.Errorf("unable to get stripe customer: %v", err)
 	}
 
 	ov.StripeID = cus.ID
@@ -159,7 +155,14 @@ func (b Billing) overview(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	Respond(w, r, http.StatusOK, ov)
+	i, err := invoice.GetNext(&stripe.InvoiceParams{Customer: &account.StripeID})
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch next invoice: %v", err)
+	}
+
+	ov.NextInvoice = i
+
+	return ov, nil
 }
 
 func (b Billing) changeQuantity(stripeID, subID string, qty int) error {
@@ -228,6 +231,7 @@ type BillingNewCustomer struct {
 	IsPerSeat   bool
 	IsYearly    bool
 	TrialDays   int
+	Quantity    int
 }
 
 func (b Billing) Start(bc BillingNewCustomer) error {
@@ -245,6 +249,86 @@ func (b Billing) Start(bc BillingNewCustomer) error {
 	}
 
 	seats := 1
+	if bc.IsPerSeat {
+		seats = 0
+		for _, u := range acct.Users {
+			if u.Role < model.RoleFree {
+				seats++
+			}
+		}
+	}
+
+	plan := bc.Plan
+	if bc.IsYearly {
+		plan += "_yearly"
+	}
+
+	// we get the current set of pricing plans
+	currentPlans := data.GetPlans("current")
+	var bp data.BillingPlan
+	for _, p := range currentPlans {
+		if p.Name == plan {
+			bp = p
+			break
+		}
+	}
+
+	if len(bp.ID) == 0 {
+		return fmt.Errorf("unable to find this plan %s in the 'current' pricing se", plan)
+	}
+
+	seatsptr := int64(seats)
+	subp := &stripe.SubscriptionParams{
+		Customer: &c.ID,
+		Plan:     stripe.String(bp.StripeID),
+		Quantity: &seatsptr,
+	}
+
+	if bc.TrialDays > 0 {
+		subp.TrialPeriodDays = stripe.Int64(int64(bc.TrialDays))
+	}
+
+	if len(bc.Coupon) > 0 {
+		subp.Coupon = &bc.Coupon
+	}
+
+	s, err := sub.New(subp)
+	if err != nil {
+		return fmt.Errorf("unable to create the subscription: %v", err)
+	}
+
+	acct.TrialInfo.IsTrial = false
+	if err := b.DB.Users.ConvertToPaid(acct.ID, c.ID, s.ID, bc.Plan, bc.IsYearly, seats); err != nil {
+		return fmt.Errorf("unable to convert the account to a paid account: %v", err)
+	}
+
+	//TODO: Trigger a new customer event
+
+	return nil
+}
+
+// Convert upgrades an existing trial account to a paid account.
+func (b Billing) Convert(bc BillingNewCustomer) error {
+	acct, err := b.DB.Users.GetDetail(bc.AccountID)
+	if err != nil {
+		return fmt.Errorf("unable to get the account for this account ID: %d -> %v", bc.AccountID, err)
+	}
+
+	p := &stripe.CustomerParams{Email: stripe.String(bc.Email)}
+	p.SetSource(bc.StripeToken)
+
+	c, err := customer.New(p)
+	if err != nil {
+		return fmt.Errorf("unable to create the customer: %v", err)
+	}
+
+	if bc.Quantity <= 0 {
+		bc.Quantity = 1
+	}
+
+	seats := bc.Quantity
+	// IsPerSeat means based on number of users.
+	// Otherwise, we're using the bc.Quantity field
 	if bc.IsPerSeat {
 		seats = 0
 		for _, u := range acct.Users {
