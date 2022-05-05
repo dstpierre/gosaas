@@ -111,39 +111,43 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	isJSON := strings.ToLower(r.Header.Get("Content-Type")) == "application/json"
 	ctx = context.WithValue(ctx, ContextContentIsJSON, isJSON)
 
-	var next *Route
+	var route *Route
+	var handler http.Handler
 	var head string
 	head, r.URL.Path = ShiftPath(r.URL.Path)
 	if r, ok := s.Routes[head]; ok {
-		next = r
+		route = r
+		handler = r.Handler
 	} else if catchall, ok := s.Routes["__catchall__"]; ok {
-		next = catchall
+		route = catchall
+		handler = catchall.Handler
 	} else {
-		next = NewError(fmt.Errorf("path not found"), http.StatusNotFound)
+		route = NewError(fmt.Errorf("path not found"), http.StatusNotFound)
+		handler = route.Handler
 	}
 
-	if next.WithDB {
+	if route.WithDB {
 		ctx = context.WithValue(ctx, ContextDatabase, s.DB)
 	}
 
-	ctx = context.WithValue(ctx, ContextMinimumRole, next.MinimumRole)
+	ctx = context.WithValue(ctx, ContextMinimumRole, route.MinimumRole)
 
 	// make sure we are authenticating all calls
-	next.Handler = s.Authenticator(next.Handler)
+	handler = s.Authenticator(handler)
 
-	if next.Logger {
-		next.Handler = s.Logger(next.Handler)
+	if route.Logger {
+		handler = s.Logger(handler)
 	}
 
-	if next.EnforceRateLimit {
-		next.Handler = s.RateLimiter(next.Handler)
-		next.Handler = s.Throttler(next.Handler)
+	if route.EnforceRateLimit {
+		handler = s.RateLimiter(handler)
+		handler = s.Throttler(handler)
 	}
 
 	// are we allowing cross-origin requests for this route
-	if next.AllowCrossOrigin {
-		next.Handler = s.Cors(next.Handler)
+	if route.AllowCrossOrigin {
+		handler = s.Cors(handler)
 	}
 
-	next.Handler.ServeHTTP(w, r.WithContext(ctx))
+	handler.ServeHTTP(w, r.WithContext(ctx))
 }
