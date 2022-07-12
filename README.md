@@ -1,3 +1,6 @@
+*This project become [StaticBackend](https://github.com/staticbackendhq/core) and 
+active development is done there.*
+
 <a href="https://buildsaasappingo.com/" title="Build a SaaS app in Go">
 	<img src="https://buildsaasappingo.com/public/basaig.jpg" alt="Build a SaaS app in Go" align="right" height="250" />
 </a>
